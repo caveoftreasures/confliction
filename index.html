@@ -1291,7 +1291,7 @@ function playTrack(idx) {
     console.log('Playing:', track.t, '- Volume:', audio.volume);
   }).catch((err) => {
     console.error('Play failed:', err);
-    alert('Failed to play audio. Error: ' + err.message);
+    // alert('Failed to play audio. Error: ' + err.message);
   });
 
   trackTitleEl.textContent = track.t;
