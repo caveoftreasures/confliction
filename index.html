@@ -462,6 +462,38 @@ function updateUrlParams() {
   window.history.replaceState({}, '', url);
 }
 
+// Wake Lock to prevent screen from turning off during playback
+let wakeLock = null;
+
+async function requestWakeLock() {
+  try {
+    // Check if Wake Lock API is supported
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('Wake Lock active - screen will stay on');
+
+      // Re-acquire wake lock if it's released (e.g., when tab becomes inactive)
+      wakeLock.addEventListener('release', () => {
+        console.log('Wake Lock released');
+      });
+    }
+  } catch (err) {
+    console.error('Wake Lock error:', err);
+  }
+}
+
+async function releaseWakeLock() {
+  if (wakeLock !== null) {
+    try {
+      await wakeLock.release();
+      wakeLock = null;
+      console.log('Wake Lock released - screen can turn off');
+    } catch (err) {
+      console.error('Wake Lock release error:', err);
+    }
+  }
+}
+
 const audio = document.getElementById('audioElement');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const prevBtn = document.getElementById('prevBtn');
@@ -1454,6 +1486,16 @@ audio.addEventListener('ended', () => {
     updatePlayButton();
     renderTrackList();
   }
+});
+
+// Request wake lock when audio starts playing
+audio.addEventListener('play', () => {
+  requestWakeLock();
+});
+
+// Release wake lock when audio pauses
+audio.addEventListener('pause', () => {
+  releaseWakeLock();
 });
 
 progressBar.addEventListener('click', (e) => {
