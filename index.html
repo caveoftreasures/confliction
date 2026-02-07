@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confliction - Music Player</title>
+  <meta name="description" content="Confliction - The Cave of Treasures. End Time Tracks For The Soul.">
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600&display=swap');
+
+:root {
+  --background: #1c1917;
+  --foreground: #fef3c7;
+  --f59e0b: #1e3a8a;
+  #92400e: #4c1d95;
+  --cosmic-pink: #831843;
+  --nebula-1: #3730a3;
+  --fbbf24: #6366f1;
+  --gold-accent: #fbbf24;
+  --starlight: #f0f9ff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Rajdhani', Arial, sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+#edenCanvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+}
+
+.container {
+  position: relative; z-index: 1;
+  max-width: 1200px; margin: 0 auto; padding: 20px;
+}
+
+header { text-align: center; padding: 40px 20px; }
+
+h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 3rem;
+  background: linear-gradient(135deg, var(--starlight), var(--gold-accent), var(#fbbf24));
+  background-clip: text; -webkit-background-clip: text;
+  color: transparent; margin-bottom: 10px;
+}
+
+.subtitle { color: var(--gold-accent); font-size: 1.2rem; margin-bottom: 20px; }
+
+.lang-selector {
+  display: inline-block; padding: 8px 16px;
+  background: rgba(30, 58, 138, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px; color: var(--foreground);
+  font-size: 0.9rem; cursor: pointer; transition: all 0.3s;
+}
+.lang-selector:hover {
+  background: rgba(30, 58, 138, 0.5);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.track-count {
+  display: inline-block; margin-left: 10px;
+  color: rgba(224, 231, 255, 0.5); font-size: 0.85rem;
+}
+
+.player {
+  background: linear-gradient(180deg, rgba(3, 0, 20, 0.95), rgba(30, 58, 138, 0.9));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 24px; padding: 30px;
+  margin: 30px auto; max-width: 800px;
+  box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3);
+}
+
+.track-info { text-align: center; margin-bottom: 20px; }
+
+#trackTitle {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.5rem; color: var(--starlight); margin-bottom: 5px;
+}
+
+.featured-badge, .alt-badge {
+  display: inline-block; padding: 4px 12px;
+  border-radius: 12px; font-size: 0.75rem; margin-top: 8px;
+}
+.featured-badge {
+  background: rgba(251, 191, 36, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: var(--gold-accent);
+}
+.alt-badge {
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+}
+
+#visualizer {
+  width: 100%; height: 80px; border-radius: 12px;
+  margin: 15px 0; background: rgba(3, 0, 20, 0.5);
+}
+
+/* Lyrics Panel */
+.lyrics-panel {
+  margin: 15px 0;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.lyrics-toggle {
+  width: 100%; padding: 12px 20px;
+  background: rgba(30, 58, 138, 0.2);
+  border: none; border-radius: 0;
+  color: var(--foreground); cursor: pointer;
+  font-size: 0.95rem; font-family: 'Rajdhani', sans-serif;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: background 0.3s;
+}
+.lyrics-toggle:hover { background: rgba(30, 58, 138, 0.4); }
+.lyrics-toggle.open { background: rgba(251, 191, 36, 0.1); color: var(--gold-accent); }
+
+.lyrics-content {
+  max-height: 350px; overflow-y: auto;
+  padding: 20px; background: rgba(3, 0, 20, 0.5);
+  transition: max-height 0.3s;
+}
+.lyrics-content.hidden { max-height: 0; padding: 0 20px; overflow: hidden; }
+
+.lyrics-text { line-height: 1.8; font-size: 0.95rem; white-space: pre-wrap; }
+.lyrics-text .section-header {
+  color: var(--gold-accent); font-weight: 600;
+  margin-top: 16px; margin-bottom: 4px;
+  font-family: 'Orbitron', sans-serif; font-size: 0.8rem;
+}
+.lyrics-text .song-title {
+  color: var(--starlight); font-weight: 700;
+  font-size: 1.1rem; margin-bottom: 8px;
+}
+.lyrics-text .theme-line {
+  color: rgba(224, 231, 255, 0.5); font-style: italic;
+  margin-bottom: 12px;
+}
+.lyrics-loading {
+  text-align: center; padding: 30px; color: rgba(224,231,255,0.5);
+}
+.lyrics-unavailable {
+  text-align: center; padding: 30px; color: rgba(224,231,255,0.4);
+}
+
+.controls {
+  display: flex; align-items: center;
+  justify-content: center; gap: 15px; margin: 20px 0;
+}
+
+button {
+  background: linear-gradient(135deg, var(#92400e), var(#f59e0b));
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  color: white; cursor: pointer; border-radius: 50%;
+  width: 50px; height: 50px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s; font-size: 1.2rem;
+}
+button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+}
+button:active { transform: scale(0.95); }
+
+#playPauseBtn {
+  width: 70px; height: 70px; font-size: 1.8rem;
+  background: linear-gradient(135deg, var(#fbbf24), var(--cosmic-pink));
+}
+
+.small-btn { width: 40px; height: 40px; font-size: 1rem; }
+
+button.active {
+  background: linear-gradient(135deg, var(--gold-accent), #f59e0b);
+  color: #000;
+}
+
+.progress-container { margin: 15px 0; }
+
+.progress-bar {
+  width: 100%; height: 6px;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 3px; cursor: pointer;
+  position: relative; overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24, var(--gold-accent));
+  border-radius: 3px; width: 0%; transition: width 0.1s linear;
+}
+.time-display {
+  display: flex; justify-content: space-between;
+  margin-top: 8px; font-size: 0.85rem;
+  color: rgba(224, 231, 255, 0.6);
+}
+
+.volume-control {
+  display: flex; align-items: center; gap: 10px; margin: 15px 0;
+}
+#volumeSlider {
+  flex: 1; height: 4px;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+
+.share-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 15px 0;
+  padding: 10px 0;
+  border-top: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.share-label {
+  font-size: 0.9rem;
+  color: var(--foreground);
+  opacity: 0.8;
+  margin-right: 5px;
+}
+
+.share-btn {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--foreground);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.share-btn:hover {
+  background: rgba(99, 102, 241, 0.3);
+  border-color: rgba(99, 102, 241, 0.5);
+  transform: translateY(-2px);
+}
+
+.share-btn:active {
+  transform: translateY(0);
+}
+
+.share-btn svg {
+  opacity: 0.9;
+}
+
+.share-btn:hover svg {
+  opacity: 1;
+}
+
+.track-list {
+  max-width: 1000px; margin: 40px auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.track-item {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.2), rgba(76, 29, 149, 0.2));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px; padding: 12px 15px;
+  cursor: pointer; transition: all 0.3s;
+  display: flex; align-items: center; gap: 12px;
+}
+.track-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+}
+.track-item.playing {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.3));
+  border-color: rgba(251, 191, 36, 0.6);
+}
+.track-item.is-alt {
+  opacity: 0.75;
+}
+.track-item.is-alt:hover { opacity: 1; }
+
+.track-number {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--gold-accent); font-weight: 600;
+  min-width: 40px; font-size: 0.85rem;
+}
+.track-title { flex: 1; color: var(--foreground); font-size: 0.95rem; }
+.track-alt-label {
+  font-size: 0.7rem; color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.15);
+  padding: 2px 6px; border-radius: 4px;
+}
+
+.play-btn-small { width: 32px; height: 32px; font-size: 0.9rem; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(30, 58, 138, 0.2); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--nebula-1), var(#92400e));
+  border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+  h1 { font-size: 2rem; }
+  #trackTitle { font-size: 1.2rem; }
+  .track-list { grid-template-columns: 1fr; }
+  .controls { gap: 10px; }
+  #playPauseBtn { width: 60px; height: 60px; font-size: 1.5rem; }
+}
+  </style>
+</head>
+<body>
+  <canvas id="edenCanvas"></canvas>
+
+  <div class="container">
+    <header>
+      <h1>Confliction</h1>
+      <p class="subtitle">The Cave of Treasures</p>
+      <div>
+        <select id="languageSelector" class="lang-selector"></select>
+        <span id="trackCount" class="track-count"></span>
+      </div>
+    </header>
+
+    <div class="player">
+      <div class="track-info">
+        <h2 id="trackTitle">Select a track</h2>
+        <span id="featuredBadge" class="featured-badge" style="display:none;">Featured Track</span>
+      </div>
+
+      <canvas id="visualizer"></canvas>
+
+      <div class="lyrics-panel">
+        <button id="lyricsToggle" class="lyrics-toggle">
+          <span>Lyrics</span>
+          <span id="lyricsArrow">&#9660;</span>
+        </button>
+        <div id="lyricsContent" class="lyrics-content hidden">
+          <div id="lyricsText" class="lyrics-text lyrics-unavailable">Select a track to see lyrics</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="shuffleBtn" class="small-btn" title="Shuffle">&#128256;</button>
+        <button id="prevBtn" title="Previous">&#9198;</button>
+        <button id="playPauseBtn" title="Play/Pause">&#9654;</button>
+        <button id="nextBtn" title="Next">&#9197;</button>
+        <button id="repeatBtn" class="small-btn" title="Repeat">&#128257;</button>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="time-display">
+          <span id="currentTime">0:00</span>
+          <span id="duration">0:00</span>
+        </div>
+      </div>
+
+      <div class="volume-control">
+        <button id="muteBtn" class="small-btn">&#128266;</button>
+        <input type="range" id="volumeSlider" min="0" max="100" value="70">
+      </div>
+
+      <div class="share-controls">
+        <span class="share-label">Share:</span>
+        <button id="shareTwitter" class="share-btn" title="Share on Twitter">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </button>
+        <button id="shareFacebook" class="share-btn" title="Share on Facebook">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+        </button>
+        <button id="shareWhatsApp" class="share-btn" title="Share on WhatsApp">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+          </svg>
+        </button>
+        <button id="shareLinkedIn" class="share-btn" title="Share on LinkedIn">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+        </button>
+        <button id="shareCopy" class="share-btn" title="Copy link">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="trackList" class="track-list"></div>
+  </div>
+
+  <audio id="audioElement" preload="metadata"></audio>
+
+  <script>
+const TRACKS={"en":[{"i":1,"t":"Cast Out of Paradise","f":"01-Cast_Out_of_Paradise.mp3","a":0},{"i":2,"t":"Cast Out of Paradise (Alt)","f":"02-Cast_Out_of_Paradise-Alt.mp3","a":1},{"i":3,"t":"Cave of Treasures","f":"03-Cave_of_Treasures.mp3","a":0},{"i":4,"t":"Cave of Treasures (Alt)","f":"04-Cave_of_Treasures-Alt.mp3","a":1},{"i":5,"t":"The First Darkness","f":"05-The_First_Darkness.mp3","a":0},{"i":6,"t":"The First Darkness (Alt)","f":"06-The_First_Darkness-Alt.mp3","a":1},{"i":7,"t":"The Serpents Curse","f":"07-The_Serpents_Curse.mp3","a":0},{"i":8,"t":"The Serpents Curse (Alt)","f":"08-The_Serpents_Curse-Alt.mp3","a":1},{"i":9,"t":"Satans Disguise","f":"09-Satans_Disguise.mp3","a":0},{"i":10,"t":"Satans Disguise (Alt)","f":"10-Satans_Disguise-Alt.mp3","a":1},{"i":11,"t":"Forty Days of Fasting","f":"11-Forty_Days_of_Fasting.mp3","a":0},{"i":12,"t":"Forty Days of Fasting (Alt)","f":"12-Forty_Days_of_Fasting-Alt.mp3","a":1},{"i":13,"t":"The Word of God","f":"13-The_Word_of_God.mp3","a":0},{"i":14,"t":"The Word of God (Alt)","f":"14-The_Word_of_God-Alt.mp3","a":1},{"i":15,"t":"From Dust to Glory","f":"15-From_Dust_to_Glory.mp3","a":0},{"i":16,"t":"From Dust to Glory (Alt)","f":"16-From_Dust_to_Glory-Alt.mp3","a":1},{"i":17,"t":"The Cherub at the Gate","f":"17-The_Cherub_at_the_Gate.mp3","a":0},{"i":18,"t":"The Cherub at the Gate (Alt)","f":"18-The_Cherub_at_the_Gate-Alt.mp3","a":1},{"i":19,"t":"The Bright Nature","f":"19-The_Bright_Nature.mp3","a":0},{"i":20,"t":"The Bright Nature (Alt)","f":"20-The_Bright_Nature-Alt.mp3","a":1},{"i":21,"t":"Eves Lament","f":"21-Eves_Lament.mp3","a":0},{"i":22,"t":"Eves Lament (Alt)","f":"22-Eves_Lament-Alt.mp3","a":1},{"i":23,"t":"The Sun and the Moon","f":"23-The_Sun_and_the_Moon.mp3","a":0},{"i":24,"t":"The Sun and the Moon (Alt)","f":"24-The_Sun_and_the_Moon-Alt.mp3","a":1},{"i":25,"t":"The Fig Leaves","f":"25-The_Fig_Leaves.mp3","a":0},{"i":26,"t":"The Fig Leaves (Alt)","f":"26-The_Fig_Leaves-Alt.mp3","a":1},{"i":27,"t":"The Promise of Salvation","f":"27-The_Promise_of_Salvation.mp3","a":0},{"i":28,"t":"The Promise of Salvation (Alt)","f":"28-The_Promise_of_Salvation-Alt.mp3","a":1},{"i":29,"t":"Standing in the Water","f":"29-Standing_in_the_Water.mp3","a":0},{"i":30,"t":"Standing in the Water (Alt)","f":"30-Standing_in_the_Water-Alt.mp3","a":1},{"i":31,"t":"Satans Hosts","f":"31-Satans_Hosts.mp3","a":0},{"i":32,"t":"Satans Hosts (Alt)","f":"32-Satans_Hosts-Alt.mp3","a":1},{"i":33,"t":"The Fire in the Cave","f":"33-The_Fire_in_the_Cave.mp3","a":0},{"i":34,"t":"The Fire in the Cave (Alt)","f":"34-The_Fire_in_the_Cave-Alt.mp3","a":1},{"i":35,"t":"The Tree of Life","f":"35-The_Tree_of_Life.mp3","a":0},{"i":36,"t":"The Tree of Life (Alt)","f":"36-The_Tree_of_Life-Alt.mp3","a":1},{"i":37,"t":"Angels Among Us","f":"37-Angels_Among_Us.mp3","a":0},{"i":38,"t":"Angels Among Us (Alt)","f":"38-Angels_Among_Us-Alt.mp3","a":1},{"i":39,"t":"The Garden Remembered","f":"39-The_Garden_Remembered.mp3","a":0},{"i":40,"t":"The Garden Remembered (Alt)","f":"40-The_Garden_Remembered-Alt.mp3","a":1},{"i":41,"t":"The Jordan Flows","f":"41-The_Jordan_Flows.mp3","a":0},{"i":42,"t":"The Jordan Flows (Alt)","f":"42-The_Jordan_Flows-Alt.mp3","a":1},{"i":43,"t":"Hunger and Thirst","f":"43-Hunger_and_Thirst.mp3","a":0},{"i":44,"t":"Hunger and Thirst (Alt)","f":"44-Hunger_and_Thirst-Alt.mp3","a":1},{"i":45,"t":"The Strange Land","f":"45-The_Strange_Land.mp3","a":0},{"i":46,"t":"The Strange Land (Alt)","f":"46-The_Strange_Land-Alt.mp3","a":1},{"i":47,"t":"The Transgression","f":"47-The_Transgression.mp3","a":0},{"i":48,"t":"The Transgression (Alt)","f":"48-The_Transgression-Alt.mp3","a":1},{"i":49,"t":"Cain and Abel","f":"49-Cain_and_Abel.mp3","a":0},{"i":50,"t":"Cain and Abel (Alt)","f":"50-Cain_and_Abel-Alt.mp3","a":1},{"i":51,"t":"The Covenant Blood","f":"51-The_Covenant_Blood.mp3","a":0},{"i":52,"t":"The Covenant Blood (Alt)","f":"52-The_Covenant_Blood-Alt.mp3","a":1},{"i":53,"t":"The Weeping Tree","f":"53-The_Weeping_Tree.mp3","a":0},{"i":54,"t":"The Weeping Tree (Alt)","f":"54-The_Weeping_Tree-Alt.mp3","a":1},{"i":55,"t":"Gods Patience","f":"55-Gods_Patience.mp3","a":0},{"i":56,"t":"Gods Patience (Alt)","f":"56-Gods_Patience-Alt.mp3","a":1},{"i":57,"t":"Adams Prayer","f":"57-Adams_Prayer.mp3","a":0},{"i":58,"t":"Adams Prayer (Alt)","f":"58-Adams_Prayer-Alt.mp3","a":1},{"i":59,"t":"The Deceivers Lies","f":"59-The_Deceivers_Lies.mp3","a":0},{"i":60,"t":"The Deceivers Lies (Alt)","f":"60-The_Deceivers_Lies-Alt.mp3","a":1},{"i":61,"t":"Strength in Weakness","f":"61-Strength_in_Weakness.mp3","a":0},{"i":62,"t":"Strength in Weakness (Alt)","f":"62-Strength_in_Weakness-Alt.mp3","a":1},{"i":63,"t":"The Sea of Crystal","f":"63-The_Sea_of_Crystal.mp3","a":0},{"i":64,"t":"The Sea of Crystal (Alt)","f":"64-The_Sea_of_Crystal-Alt.mp3","a":1},{"i":65,"t":"Seth the Replacement","f":"65-Seth_the_Replacement.mp3","a":0},{"i":66,"t":"Seth the Replacement (Alt)","f":"66-Seth_the_Replacement-Alt.mp3","a":1},{"i":67,"t":"The Enemy Within","f":"67-The_Enemy_Within.mp3","a":0},{"i":68,"t":"The Enemy Within (Alt)","f":"68-The_Enemy_Within-Alt.mp3","a":1},{"i":69,"t":"Morning Comes","f":"69-Morning_Comes.mp3","a":0},{"i":70,"t":"Morning Comes (Alt)","f":"70-Morning_Comes-Alt.mp3","a":1},{"i":71,"t":"The Garments of Skin","f":"71-The_Garments_of_Skin.mp3","a":0},{"i":72,"t":"The Garments of Skin (Alt)","f":"72-The_Garments_of_Skin-Alt.mp3","a":1},{"i":73,"t":"The Fallen Angels","f":"73-The_Fallen_Angels.mp3","a":0},{"i":74,"t":"The Fallen Angels (Alt)","f":"74-The_Fallen_Angels-Alt.mp3","a":1},{"i":75,"t":"The Secret of the Cave","f":"75-The_Secret_of_the_Cave.mp3","a":0},{"i":76,"t":"The Secret of the Cave (Alt)","f":"76-The_Secret_of_the_Cave-Alt.mp3","a":1},{"i":77,"t":"East of Eden","f":"77-East_of_Eden.mp3","a":0},{"i":78,"t":"East of Eden (Alt)","f":"78-East_of_Eden-Alt.mp3","a":1},{"i":79,"t":"Adams 930 Years","f":"79-Adams_930_Years.mp3","a":0},{"i":80,"t":"Adams 930 Years (Alt)","f":"80-Adams_930_Years-Alt.mp3","a":1},{"i":81,"t":"The Word Made Flesh","f":"81-The_Word_Made_Flesh.mp3","a":0},{"i":82,"t":"The Word Made Flesh (Alt)","f":"82-The_Word_Made_Flesh-Alt.mp3","a":1},{"i":83,"t":"Paradise Restored","f":"83-Paradise_Restored.mp3","a":0},{"i":84,"t":"Paradise Restored (Alt)","f":"84-Paradise_Restored-Alt.mp3","a":1},{"i":85,"t":"The Midnight Cry","f":"85-The_Midnight_Cry.mp3","a":0},{"i":86,"t":"The Midnight Cry (Alt)","f":"86-The_Midnight_Cry-Alt.mp3","a":1},{"i":87,"t":"Born of Woman","f":"87-Born_of_Woman.mp3","a":0},{"i":88,"t":"Born of Woman (Alt)","f":"88-Born_of_Woman-Alt.mp3","a":1},{"i":89,"t":"The Serpent Crusher","f":"89-The_Serpent_Crusher.mp3","a":0},{"i":90,"t":"The Serpent Crusher (Alt)","f":"90-The_Serpent_Crusher-Alt.mp3","a":1},{"i":91,"t":"Rest for the Weary","f":"91-Rest_for_the_Weary.mp3","a":0},{"i":92,"t":"Rest for the Weary (Alt)","f":"92-Rest_for_the_Weary-Alt.mp3","a":1},{"i":93,"t":"The Great Exchange","f":"93-The_Great_Exchange.mp3","a":0},{"i":94,"t":"The Great Exchange (Alt)","f":"94-The_Great_Exchange-Alt.mp3","a":1},{"i":95,"t":"The Valley of Death","f":"95-The_Valley_of_Death.mp3","a":0},{"i":96,"t":"The Valley of Death (Alt)","f":"96-The_Valley_of_Death-Alt.mp3","a":1},{"i":97,"t":"Rivers of Living Water","f":"97-Rivers_of_Living_Water.mp3","a":0},{"i":98,"t":"Rivers of Living Water (Alt)","f":"98-Rivers_of_Living_Water-Alt.mp3","a":1},{"i":99,"t":"The Day of Restoration","f":"99-The_Day_of_Restoration.mp3","a":0},{"i":100,"t":"The Day of Restoration (Alt)","f":"100-The_Day_of_Restoration-Alt.mp3","a":1},{"i":101,"t":"Fight of Faith","f":"101-Fight_of_Faith.mp3","a":0},{"i":102,"t":"Fight of Faith (Alt)","f":"102-Fight_of_Faith-Alt.mp3","a":1},{"i":103,"t":"Edens Memory","f":"103-Edens_Memory.mp3","a":0},{"i":104,"t":"Edens Memory (Alt)","f":"104-Edens_Memory-Alt.mp3","a":1},{"i":105,"t":"The Second Adam","f":"105-The_Second_Adam.mp3","a":0},{"i":106,"t":"The Second Adam (Alt)","f":"106-The_Second_Adam-Alt.mp3","a":1},{"i":107,"t":"The Long Road Home","f":"107-The_Long_Road_Home.mp3","a":0},{"i":108,"t":"The Long Road Home (Alt)","f":"108-The_Long_Road_Home-Alt.mp3","a":1},{"i":109,"t":"The Risen One","f":"109-The_Risen_One.mp3","a":0},{"i":110,"t":"The Risen One (Alt)","f":"110-The_Risen_One-Alt.mp3","a":1},{"i":111,"t":"The Final Day","f":"111-The_Final_Day.mp3","a":0},{"i":112,"t":"The Final Day (Alt)","f":"112-The_Final_Day-Alt.mp3","a":1},{"i":113,"t":"Gods Faithfulness","f":"113-Gods_Faithfulness.mp3","a":0},{"i":114,"t":"Gods Faithfulness (Alt)","f":"114-Gods_Faithfulness-Alt.mp3","a":1},{"i":115,"t":"Walking with God","f":"115-Walking_with_God.mp3","a":0},{"i":116,"t":"Walking with God (Alt)","f":"116-Walking_with_God-Alt.mp3","a":1},{"i":117,"t":"The Burning of Sin","f":"117-The_Burning_of_Sin.mp3","a":0},{"i":118,"t":"The Burning of Sin (Alt)","f":"118-The_Burning_of_Sin-Alt.mp3","a":1},{"i":119,"t":"Children of Adam","f":"119-Children_of_Adam.mp3","a":0},{"i":120,"t":"Children of Adam (Alt)","f":"120-Children_of_Adam-Alt.mp3","a":1},{"i":121,"t":"Never Forgotten","f":"121-Never_Forgotten.mp3","a":0},{"i":122,"t":"Never Forgotten (Alt)","f":"122-Never_Forgotten-Alt.mp3","a":1},{"i":123,"t":"Holy Holy Holy","f":"123-Holy_Holy_Holy.mp3","a":0},{"i":124,"t":"Holy Holy Holy (Alt)","f":"124-Holy_Holy_Holy-Alt.mp3","a":1},{"i":125,"t":"From Glory to Glory","f":"125-From_Glory_to_Glory.mp3","a":0},{"i":126,"t":"From Glory to Glory (Alt)","f":"126-From_Glory_to_Glory-Alt.mp3","a":1},{"i":127,"t":"The Overcoming","f":"127-The_Overcoming.mp3","a":0},{"i":128,"t":"The Overcoming (Alt)","f":"128-The_Overcoming-Alt.mp3","a":1},{"i":129,"t":"The Eternal Home","f":"129-The_Eternal_Home.mp3","a":0},{"i":130,"t":"The Eternal Home (Alt)","f":"130-The_Eternal_Home-Alt.mp3","a":1},{"i":131,"t":"From Beginning to End","f":"131-From_Beginning_to_End.mp3","a":0},{"i":132,"t":"From Beginning to End (Alt)","f":"132-From_Beginning_to_End-Alt.mp3","a":1}],"ru":[{"i":1,"t":"Изгнание из Рая","f":"01-Cast_Out_of_Paradise.mp3","a":0},{"i":2,"t":"Изгнание из Рая","f":"02-Cast_Out_of_Paradise-Alt.mp3","a":1},{"i":3,"t":"Пещера Сокровищ","f":"03-Cave_of_Treasures.mp3","a":0},{"i":4,"t":"Пещера Сокровищ","f":"04-Cave_of_Treasures-Alt.mp3","a":1},{"i":5,"t":"Первая Тьма","f":"05-The_First_Darkness.mp3","a":0},{"i":6,"t":"Первая Тьма","f":"06-The_First_Darkness-Alt.mp3","a":1},{"i":7,"t":"Проклятие Змея","f":"07-The_Serpents_Curse.mp3","a":0},{"i":8,"t":"Проклятие Змея","f":"08-The_Serpents_Curse-Alt.mp3","a":1},{"i":9,"t":"Маскировка Сатаны","f":"09-Satans_Disguise.mp3","a":0},{"i":10,"t":"Маскировка Сатаны","f":"10-Satans_Disguise-Alt.mp3","a":1},{"i":11,"t":"Сорок Дней Поста","f":"11-Forty_Days_of_Fasting.mp3","a":0},{"i":12,"t":"Сорок Дней Поста","f":"12-Forty_Days_of_Fasting-Alt.mp3","a":1},{"i":13,"t":"Слово Божье","f":"13-The_Word_of_God.mp3","a":0},{"i":14,"t":"Слово Божье","f":"14-The_Word_of_God-Alt.mp3","a":1},{"i":15,"t":"От Праха к Славе","f":"15-From_Dust_to_Glory.mp3","a":0},{"i":16,"t":"От Праха к Славе","f":"16-From_Dust_to_Glory-Alt.mp3","a":1},{"i":17,"t":"Херувим у Врат","f":"17-The_Cherub_at_the_Gate.mp3","a":0},{"i":18,"t":"Херувим у Врат","f":"18-The_Cherub_at_the_Gate-Alt.mp3","a":1},{"i":19,"t":"Светлая Природа","f":"19-The_Bright_Nature.mp3","a":0},{"i":20,"t":"Светлая Природа","f":"20-The_Bright_Nature-Alt.mp3","a":1},{"i":21,"t":"Плач Евы","f":"21-Eves_Lament.mp3","a":0},{"i":22,"t":"Плач Евы","f":"22-Eves_Lament-Alt.mp3","a":1},{"i":23,"t":"Солнце и Луна","f":"23-The_Sun_and_the_Moon.mp3","a":0},{"i":24,"t":"Солнце и Луна","f":"24-The_Sun_and_the_Moon-Alt.mp3","a":1},{"i":25,"t":"Листья Смоковницы","f":"25-The_Fig_Leaves.mp3","a":0},{"i":26,"t":"Листья Смоковницы","f":"26-The_Fig_Leaves-Alt.mp3","a":1},{"i":27,"t":"Обещание Спасения","f":"27-The_Promise_of_Salvation.mp3","a":0},{"i":28,"t":"Обещание Спасения","f":"28-The_Promise_of_Salvation-Alt.mp3","a":1},{"i":29,"t":"Стоя в Воде","f":"29-Standing_in_the_Water.mp3","a":0},{"i":30,"t":"Стоя в Воде","f":"30-Standing_in_the_Water-Alt.mp3","a":1},{"i":31,"t":"Воинства Сатаны","f":"31-Satans_Hosts.mp3","a":0},{"i":32,"t":"Воинства Сатаны","f":"32-Satans_Hosts-Alt.mp3","a":1},{"i":33,"t":"Огонь в Пещере","f":"33-The_Fire_in_the_Cave.mp3","a":0},{"i":34,"t":"Огонь в Пещере","f":"34-The_Fire_in_the_Cave-Alt.mp3","a":1},{"i":35,"t":"Древо Жизни","f":"35-The_Tree_of_Life.mp3","a":0},{"i":36,"t":"Древо Жизни","f":"36-The_Tree_of_Life-Alt.mp3","a":1},{"i":37,"t":"Ангелы Среди Нас","f":"37-Angels_Among_Us.mp3","a":0},{"i":38,"t":"Ангелы Среди Нас","f":"38-Angels_Among_Us-Alt.mp3","a":1},{"i":39,"t":"Воспоминание о Саде","f":"39-The_Garden_Remembered.mp3","a":0},{"i":40,"t":"Воспоминание о Саде","f":"40-The_Garden_Remembered-Alt.mp3","a":1},{"i":41,"t":"Иордан Течёт","f":"41-The_Jordan_Flows.mp3","a":0},{"i":42,"t":"Иордан Течёт","f":"42-The_Jordan_Flows-Alt.mp3","a":1},{"i":43,"t":"Голод и Жажда","f":"43-Hunger_and_Thirst.mp3","a":0},{"i":44,"t":"Голод и Жажда","f":"44-Hunger_and_Thirst-Alt.mp3","a":1},{"i":45,"t":"Чужая Земля","f":"45-The_Strange_Land.mp3","a":0},{"i":46,"t":"Чужая Земля","f":"46-The_Strange_Land-Alt.mp3","a":1},{"i":47,"t":"Преступление","f":"47-The_Transgression.mp3","a":0},{"i":48,"t":"Преступление","f":"48-The_Transgression-Alt.mp3","a":1},{"i":49,"t":"Каин и Авель","f":"49-Cain_and_Abel.mp3","a":0},{"i":50,"t":"Каин и Авель","f":"50-Cain_and_Abel-Alt.mp3","a":1},{"i":51,"t":"Кровь Завета","f":"51-The_Covenant_Blood.mp3","a":0},{"i":52,"t":"Кровь Завета","f":"52-The_Covenant_Blood-Alt.mp3","a":1},{"i":53,"t":"Плачущее Дерево","f":"53-The_Weeping_Tree.mp3","a":0},{"i":54,"t":"Плачущее Дерево","f":"54-The_Weeping_Tree-Alt.mp3","a":1},{"i":55,"t":"Терпение Бога","f":"55-Gods_Patience.mp3","a":0},{"i":56,"t":"Терпение Бога","f":"56-Gods_Patience-Alt.mp3","a":1},{"i":57,"t":"Молитва Адама","f":"57-Adams_Prayer.mp3","a":0},{"i":58,"t":"Молитва Адама","f":"58-Adams_Prayer-Alt.mp3","a":1},{"i":59,"t":"Ложь Обманщика","f":"59-The_Deceivers_Lies.mp3","a":0},{"i":60,"t":"Ложь Обманщика","f":"60-The_Deceivers_Lies-Alt.mp3","a":1},{"i":61,"t":"Сила в Немощи","f":"61-Strength_in_Weakness.mp3","a":0},{"i":62,"t":"Сила в Немощи","f":"62-Strength_in_Weakness-Alt.mp3","a":1},{"i":63,"t":"Хрустальное Море","f":"63-The_Sea_of_Crystal.mp3","a":0},{"i":64,"t":"Хрустальное Море","f":"64-The_Sea_of_Crystal-Alt.mp3","a":1},{"i":65,"t":"Сиф Замена","f":"65-Seth_the_Replacement.mp3","a":0},{"i":66,"t":"Сиф Замена","f":"66-Seth_the_Replacement-Alt.mp3","a":1},{"i":67,"t":"Враг Внутри","f":"67-The_Enemy_Within.mp3","a":0},{"i":68,"t":"Враг Внутри","f":"68-The_Enemy_Within-Alt.mp3","a":1},{"i":69,"t":"Наступает Утро","f":"69-Morning_Comes.mp3","a":0},{"i":70,"t":"Наступает Утро","f":"70-Morning_Comes-Alt.mp3","a":1},{"i":71,"t":"Одежды из Кожи","f":"71-The_Garments_of_Skin.mp3","a":0},{"i":72,"t":"Одежды из Кожи","f":"72-The_Garments_of_Skin-Alt.mp3","a":1},{"i":73,"t":"Падшие Ангелы","f":"73-The_Fallen_Angels.mp3","a":0},{"i":74,"t":"Падшие Ангелы","f":"74-The_Fallen_Angels-Alt.mp3","a":1},{"i":75,"t":"Тайна Пещеры","f":"75-The_Secret_of_the_Cave.mp3","a":0},{"i":76,"t":"Тайна Пещеры","f":"76-The_Secret_of_the_Cave-Alt.mp3","a":1},{"i":77,"t":"К Востоку от Эдема","f":"77-East_of_Eden.mp3","a":0},{"i":78,"t":"К Востоку от Эдема","f":"78-East_of_Eden-Alt.mp3","a":1},{"i":79,"t":"930 Лет Адама","f":"79-Adams_930_Years.mp3","a":0},{"i":80,"t":"930 Лет Адама","f":"80-Adams_930_Years-Alt.mp3","a":1},{"i":81,"t":"Слово Стало Плотью","f":"81-The_Word_Made_Flesh.mp3","a":0},{"i":82,"t":"Слово Стало Плотью","f":"82-The_Word_Made_Flesh-Alt.mp3","a":1},{"i":83,"t":"Восстановленный Рай","f":"83-Paradise_Restored.mp3","a":0},{"i":84,"t":"Восстановленный Рай","f":"84-Paradise_Restored-Alt.mp3","a":1},{"i":85,"t":"Полуночный Крик","f":"85-The_Midnight_Cry.mp3","a":0},{"i":86,"t":"Полуночный Крик","f":"86-The_Midnight_Cry-Alt.mp3","a":1},{"i":87,"t":"Рождённый от Женщины","f":"87-Born_of_Woman.mp3","a":0},{"i":88,"t":"Рождённый от Женщины","f":"88-Born_of_Woman-Alt.mp3","a":1},{"i":89,"t":"Сокрушитель Змея","f":"89-The_Serpent_Crusher.mp3","a":0},{"i":90,"t":"Сокрушитель Змея","f":"90-The_Serpent_Crusher-Alt.mp3","a":1},{"i":91,"t":"Покой для Усталых","f":"91-Rest_for_the_Weary.mp3","a":0},{"i":92,"t":"Покой для Усталых","f":"92-Rest_for_the_Weary-Alt.mp3","a":1},{"i":93,"t":"Великий Обмен","f":"93-The_Great_Exchange.mp3","a":0},{"i":94,"t":"Великий Обмен","f":"94-The_Great_Exchange-Alt.mp3","a":1},{"i":95,"t":"Долина Смерти","f":"95-The_Valley_of_Death.mp3","a":0},{"i":96,"t":"Долина Смерти","f":"96-The_Valley_of_Death-Alt.mp3","a":1},{"i":97,"t":"Реки Воды Живой","f":"97-Rivers_of_Living_Water.mp3","a":0},{"i":98,"t":"Реки Воды Живой","f":"98-Rivers_of_Living_Water-Alt.mp3","a":1},{"i":99,"t":"День Восстановления","f":"99-The_Day_of_Restoration.mp3","a":0},{"i":100,"t":"День Восстановления","f":"100-The_Day_of_Restoration-Alt.mp3","a":1},{"i":101,"t":"Борьба Веры","f":"101-Fight_of_Faith.mp3","a":0},{"i":102,"t":"Борьба Веры","f":"102-Fight_of_Faith-Alt.mp3","a":1},{"i":103,"t":"Память об Эдеме","f":"103-Edens_Memory.mp3","a":0},{"i":104,"t":"Память об Эдеме","f":"104-Edens_Memory-Alt.mp3","a":1},{"i":105,"t":"Второй Адам","f":"105-The_Second_Adam.mp3","a":0},{"i":106,"t":"Второй Адам","f":"106-The_Second_Adam-Alt.mp3","a":1},{"i":107,"t":"Долгий Путь Домой","f":"107-The_Long_Road_Home.mp3","a":0},{"i":108,"t":"Долгий Путь Домой","f":"108-The_Long_Road_Home-Alt.mp3","a":1},{"i":109,"t":"Воскресший","f":"109-The_Risen_One.mp3","a":0},{"i":110,"t":"Воскресший","f":"110-The_Risen_One-Alt.mp3","a":1},{"i":111,"t":"Последний День","f":"111-The_Final_Day.mp3","a":0},{"i":112,"t":"Последний День","f":"112-The_Final_Day-Alt.mp3","a":1},{"i":113,"t":"Верность Бога","f":"113-Gods_Faithfulness.mp3","a":0},{"i":114,"t":"Верность Бога","f":"114-Gods_Faithfulness-Alt.mp3","a":1},{"i":115,"t":"Ходить с Богом","f":"115-Walking_with_God.mp3","a":0},{"i":116,"t":"Ходить с Богом","f":"116-Walking_with_God-Alt.mp3","a":1},{"i":117,"t":"Сожжение Греха","f":"117-The_Burning_of_Sin.mp3","a":0},{"i":118,"t":"Сожжение Греха","f":"118-The_Burning_of_Sin-Alt.mp3","a":1},{"i":119,"t":"Дети Адама","f":"119-Children_of_Adam.mp3","a":0},{"i":120,"t":"Дети Адама","f":"120-Children_of_Adam-Alt.mp3","a":1},{"i":121,"t":"Никогда не Забытый","f":"121-Never_Forgotten.mp3","a":0},{"i":122,"t":"Никогда не Забытый","f":"122-Never_Forgotten-Alt.mp3","a":1},{"i":123,"t":"Свят Свят Свят","f":"123-Holy_Holy_Holy.mp3","a":0},{"i":124,"t":"Свят Свят Свят","f":"124-Holy_Holy_Holy-Alt.mp3","a":1},{"i":125,"t":"От Славы к Славе","f":"125-From_Glory_to_Glory.mp3","a":0},{"i":126,"t":"От Славы к Славе","f":"126-From_Glory_to_Glory-Alt.mp3","a":1},{"i":127,"t":"Победа","f":"127-The_Overcoming.mp3","a":0},{"i":128,"t":"Победа","f":"128-The_Overcoming-Alt.mp3","a":1},{"i":129,"t":"Вечный Дом","f":"129-The_Eternal_Home.mp3","a":0},{"i":130,"t":"Вечный Дом","f":"130-The_Eternal_Home-Alt.mp3","a":1},{"i":131,"t":"От Начала до Конца","f":"131-From_Beginning_to_End.mp3","a":0},{"i":132,"t":"От Начала до Конца","f":"132-From_Beginning_to_End-Alt.mp3","a":1}],"es":[{"i":1,"t":"Expulsados del Paraíso","f":"01-Cast_Out_of_Paradise.mp3","a":0},{"i":2,"t":"Expulsados del Paraíso","f":"02-Cast_Out_of_Paradise-Alt.mp3","a":1},{"i":3,"t":"La Cueva de los Tesoros","f":"03-Cave_of_Treasures.mp3","a":0},{"i":4,"t":"La Cueva de los Tesoros","f":"04-Cave_of_Treasures-Alt.mp3","a":1},{"i":5,"t":"La Primera Oscuridad","f":"05-The_First_Darkness.mp3","a":0},{"i":6,"t":"La Primera Oscuridad","f":"06-The_First_Darkness-Alt.mp3","a":1},{"i":7,"t":"La Maldición de la Serpiente","f":"07-The_Serpents_Curse.mp3","a":0},{"i":8,"t":"La Maldición de la Serpiente","f":"08-The_Serpents_Curse-Alt.mp3","a":1},{"i":9,"t":"El Disfraz de Satanás","f":"09-Satans_Disguise.mp3","a":0},{"i":10,"t":"El Disfraz de Satanás","f":"10-Satans_Disguise-Alt.mp3","a":1},{"i":11,"t":"Cuarenta Días de Ayuno","f":"11-Forty_Days_of_Fasting.mp3","a":0},{"i":12,"t":"Cuarenta Días de Ayuno","f":"12-Forty_Days_of_Fasting-Alt.mp3","a":1},{"i":13,"t":"La Palabra de Dios","f":"13-The_Word_of_God.mp3","a":0},{"i":14,"t":"La Palabra de Dios","f":"14-The_Word_of_God-Alt.mp3","a":1},{"i":15,"t":"Del Polvo a la Gloria","f":"15-From_Dust_to_Glory.mp3","a":0},{"i":16,"t":"Del Polvo a la Gloria","f":"16-From_Dust_to_Glory-Alt.mp3","a":1},{"i":17,"t":"El Querubín en la Puerta","f":"17-The_Cherub_at_the_Gate.mp3","a":0},{"i":18,"t":"El Querubín en la Puerta","f":"18-The_Cherub_at_the_Gate-Alt.mp3","a":1},{"i":19,"t":"La Naturaleza Brillante","f":"19-The_Bright_Nature.mp3","a":0},{"i":20,"t":"La Naturaleza Brillante","f":"20-The_Bright_Nature-Alt.mp3","a":1},{"i":21,"t":"El Lamento de Eva","f":"21-Eves_Lament.mp3","a":0},{"i":22,"t":"El Lamento de Eva","f":"22-Eves_Lament-Alt.mp3","a":1},{"i":23,"t":"El Sol y la Luna","f":"23-The_Sun_and_the_Moon.mp3","a":0},{"i":24,"t":"El Sol y la Luna","f":"24-The_Sun_and_the_Moon-Alt.mp3","a":1},{"i":25,"t":"Las Hojas de Higuera","f":"25-The_Fig_Leaves.mp3","a":0},{"i":26,"t":"Las Hojas de Higuera","f":"26-The_Fig_Leaves-Alt.mp3","a":1},{"i":27,"t":"La Promesa de Salvación","f":"27-The_Promise_of_Salvation.mp3","a":0},{"i":28,"t":"La Promesa de Salvación","f":"28-The_Promise_of_Salvation-Alt.mp3","a":1},{"i":29,"t":"De Pie en el Agua","f":"29-Standing_in_the_Water.mp3","a":0},{"i":30,"t":"De Pie en el Agua","f":"30-Standing_in_the_Water-Alt.mp3","a":1},{"i":31,"t":"Los Ejércitos de Satanás","f":"31-Satans_Hosts.mp3","a":0},{"i":32,"t":"Los Ejércitos de Satanás","f":"32-Satans_Hosts-Alt.mp3","a":1},{"i":33,"t":"El Fuego en la Cueva","f":"33-The_Fire_in_the_Cave.mp3","a":0},{"i":34,"t":"El Fuego en la Cueva","f":"34-The_Fire_in_the_Cave-Alt.mp3","a":1},{"i":35,"t":"El Árbol de la Vida","f":"35-The_Tree_of_Life.mp3","a":0},{"i":36,"t":"El Árbol de la Vida","f":"36-The_Tree_of_Life-Alt.mp3","a":1},{"i":37,"t":"Ángeles Entre Nosotros","f":"37-Angels_Among_Us.mp3","a":0},{"i":38,"t":"Ángeles Entre Nosotros","f":"38-Angels_Among_Us-Alt.mp3","a":1},{"i":39,"t":"El Jardín Recordado","f":"39-The_Garden_Remembered.mp3","a":0},{"i":40,"t":"El Jardín Recordado","f":"40-The_Garden_Remembered-Alt.mp3","a":1},{"i":41,"t":"El Jordán Fluye","f":"41-The_Jordan_Flows.mp3","a":0},{"i":42,"t":"El Jordán Fluye","f":"42-The_Jordan_Flows-Alt.mp3","a":1},{"i":43,"t":"Hambre y Sed","f":"43-Hunger_and_Thirst.mp3","a":0},{"i":44,"t":"Hambre y Sed","f":"44-Hunger_and_Thirst-Alt.mp3","a":1},{"i":45,"t":"La Tierra Extraña","f":"45-The_Strange_Land.mp3","a":0},{"i":46,"t":"La Tierra Extraña","f":"46-The_Strange_Land-Alt.mp3","a":1},{"i":47,"t":"La Transgresión","f":"47-The_Transgression.mp3","a":0},{"i":48,"t":"La Transgresión","f":"48-The_Transgression-Alt.mp3","a":1},{"i":49,"t":"Caín y Abel","f":"49-Cain_and_Abel.mp3","a":0},{"i":50,"t":"Caín y Abel","f":"50-Cain_and_Abel-Alt.mp3","a":1},{"i":51,"t":"La Sangre del Pacto","f":"51-The_Covenant_Blood.mp3","a":0},{"i":52,"t":"La Sangre del Pacto","f":"52-The_Covenant_Blood-Alt.mp3","a":1},{"i":53,"t":"El Árbol que Llora","f":"53-The_Weeping_Tree.mp3","a":0},{"i":54,"t":"El Árbol que Llora","f":"54-The_Weeping_Tree-Alt.mp3","a":1},{"i":55,"t":"La Paciencia de Dios","f":"55-Gods_Patience.mp3","a":0},{"i":56,"t":"La Paciencia de Dios","f":"56-Gods_Patience-Alt.mp3","a":1},{"i":57,"t":"La Oración de Adán","f":"57-Adams_Prayer.mp3","a":0},{"i":58,"t":"La Oración de Adán","f":"58-Adams_Prayer-Alt.mp3","a":1},{"i":59,"t":"Las Mentiras del Engañador","f":"59-The_Deceivers_Lies.mp3","a":0},{"i":60,"t":"Las Mentiras del Engañador","f":"60-The_Deceivers_Lies-Alt.mp3","a":1},{"i":61,"t":"Fuerza en la Debilidad","f":"61-Strength_in_Weakness.mp3","a":0},{"i":62,"t":"Fuerza en la Debilidad","f":"62-Strength_in_Weakness-Alt.mp3","a":1},{"i":63,"t":"El Mar de Cristal","f":"63-The_Sea_of_Crystal.mp3","a":0},{"i":64,"t":"El Mar de Cristal","f":"64-The_Sea_of_Crystal-Alt.mp3","a":1},{"i":65,"t":"Set el Sustituto","f":"65-Seth_the_Replacement.mp3","a":0},{"i":66,"t":"Set el Sustituto","f":"66-Seth_the_Replacement-Alt.mp3","a":1},{"i":67,"t":"El Enemigo Interior","f":"67-The_Enemy_Within.mp3","a":0},{"i":68,"t":"El Enemigo Interior","f":"68-The_Enemy_Within-Alt.mp3","a":1},{"i":69,"t":"Llega la Mañana","f":"69-Morning_Comes.mp3","a":0},{"i":70,"t":"Llega la Mañana","f":"70-Morning_Comes-Alt.mp3","a":1},{"i":71,"t":"Las Vestiduras de Piel","f":"71-The_Garments_of_Skin.mp3","a":0},{"i":72,"t":"Las Vestiduras de Piel","f":"72-The_Garments_of_Skin-Alt.mp3","a":1},{"i":73,"t":"Los Ángeles Caídos","f":"73-The_Fallen_Angels.mp3","a":0},{"i":74,"t":"Los Ángeles Caídos","f":"74-The_Fallen_Angels-Alt.mp3","a":1},{"i":75,"t":"El Secreto de la Cueva","f":"75-The_Secret_of_the_Cave.mp3","a":0},{"i":76,"t":"El Secreto de la Cueva","f":"76-The_Secret_of_the_Cave-Alt.mp3","a":1},{"i":77,"t":"Al Este del Edén","f":"77-East_of_Eden.mp3","a":0},{"i":78,"t":"Al Este del Edén","f":"78-East_of_Eden-Alt.mp3","a":1},{"i":79,"t":"Los 930 Años de Adán","f":"79-Adams_930_Years.mp3","a":0},{"i":80,"t":"Los 930 Años de Adán","f":"80-Adams_930_Years-Alt.mp3","a":1},{"i":81,"t":"El Verbo Hecho Carne","f":"81-The_Word_Made_Flesh.mp3","a":0},{"i":82,"t":"El Verbo Hecho Carne","f":"82-The_Word_Made_Flesh-Alt.mp3","a":1},{"i":83,"t":"El Paraíso Restaurado","f":"83-Paradise_Restored.mp3","a":0},{"i":84,"t":"El Paraíso Restaurado","f":"84-Paradise_Restored-Alt.mp3","a":1},{"i":85,"t":"El Grito de Medianoche","f":"85-The_Midnight_Cry.mp3","a":0},{"i":86,"t":"El Grito de Medianoche","f":"86-The_Midnight_Cry-Alt.mp3","a":1},{"i":87,"t":"Nacido de Mujer","f":"87-Born_of_Woman.mp3","a":0},{"i":88,"t":"Nacido de Mujer","f":"88-Born_of_Woman-Alt.mp3","a":1},{"i":89,"t":"El que Aplasta la Serpiente","f":"89-The_Serpent_Crusher.mp3","a":0},{"i":90,"t":"El que Aplasta la Serpiente","f":"90-The_Serpent_Crusher-Alt.mp3","a":1},{"i":91,"t":"Descanso para los Cansados","f":"91-Rest_for_the_Weary.mp3","a":0},{"i":92,"t":"Descanso para los Cansados","f":"92-Rest_for_the_Weary-Alt.mp3","a":1},{"i":93,"t":"El Gran Intercambio","f":"93-The_Great_Exchange.mp3","a":0},{"i":94,"t":"El Gran Intercambio","f":"94-The_Great_Exchange-Alt.mp3","a":1},{"i":95,"t":"El Valle de la Muerte","f":"95-The_Valley_of_Death.mp3","a":0},{"i":96,"t":"El Valle de la Muerte","f":"96-The_Valley_of_Death-Alt.mp3","a":1},{"i":97,"t":"Ríos de Agua Viva","f":"97-Rivers_of_Living_Water.mp3","a":0},{"i":98,"t":"Ríos de Agua Viva","f":"98-Rivers_of_Living_Water-Alt.mp3","a":1},{"i":99,"t":"El Día de la Restauración","f":"99-The_Day_of_Restoration.mp3","a":0},{"i":100,"t":"El Día de la Restauración","f":"100-The_Day_of_Restoration-Alt.mp3","a":1},{"i":101,"t":"La Lucha de la Fe","f":"101-Fight_of_Faith.mp3","a":0},{"i":102,"t":"La Lucha de la Fe","f":"102-Fight_of_Faith-Alt.mp3","a":1},{"i":103,"t":"El Recuerdo del Edén","f":"103-Edens_Memory.mp3","a":0},{"i":104,"t":"El Recuerdo del Edén","f":"104-Edens_Memory-Alt.mp3","a":1},{"i":105,"t":"El Segundo Adán","f":"105-The_Second_Adam.mp3","a":0},{"i":106,"t":"El Segundo Adán","f":"106-The_Second_Adam-Alt.mp3","a":1},{"i":107,"t":"El Largo Camino a Casa","f":"107-The_Long_Road_Home.mp3","a":0},{"i":108,"t":"El Largo Camino a Casa","f":"108-The_Long_Road_Home-Alt.mp3","a":1},{"i":109,"t":"El Resucitado","f":"109-The_Risen_One.mp3","a":0},{"i":110,"t":"El Resucitado","f":"110-The_Risen_One-Alt.mp3","a":1},{"i":111,"t":"El Día Final","f":"111-The_Final_Day.mp3","a":0},{"i":112,"t":"El Día Final","f":"112-The_Final_Day-Alt.mp3","a":1},{"i":113,"t":"La Fidelidad de Dios","f":"113-Gods_Faithfulness.mp3","a":0},{"i":114,"t":"La Fidelidad de Dios","f":"114-Gods_Faithfulness-Alt.mp3","a":1},{"i":115,"t":"Caminando con Dios","f":"115-Walking_with_God.mp3","a":0},{"i":116,"t":"Caminando con Dios","f":"116-Walking_with_God-Alt.mp3","a":1},{"i":117,"t":"La Quema del Pecado","f":"117-The_Burning_of_Sin.mp3","a":0},{"i":118,"t":"La Quema del Pecado","f":"118-The_Burning_of_Sin-Alt.mp3","a":1},{"i":119,"t":"Los Hijos de Adán","f":"119-Children_of_Adam.mp3","a":0},{"i":120,"t":"Los Hijos de Adán","f":"120-Children_of_Adam-Alt.mp3","a":1},{"i":121,"t":"Nunca Olvidado","f":"121-Never_Forgotten.mp3","a":0},{"i":122,"t":"Nunca Olvidado","f":"122-Never_Forgotten-Alt.mp3","a":1},{"i":123,"t":"Santo Santo Santo","f":"123-Holy_Holy_Holy.mp3","a":0},{"i":124,"t":"Santo Santo Santo","f":"124-Holy_Holy_Holy-Alt.mp3","a":1},{"i":125,"t":"De Gloria en Gloria","f":"125-From_Glory_to_Glory.mp3","a":0},{"i":126,"t":"De Gloria en Gloria","f":"126-From_Glory_to_Glory-Alt.mp3","a":1},{"i":127,"t":"La Victoria","f":"127-The_Overcoming.mp3","a":0},{"i":128,"t":"La Victoria","f":"128-The_Overcoming-Alt.mp3","a":1},{"i":129,"t":"El Hogar Eterno","f":"129-The_Eternal_Home.mp3","a":0},{"i":130,"t":"El Hogar Eterno","f":"130-The_Eternal_Home-Alt.mp3","a":1},{"i":131,"t":"Del Principio al Fin","f":"131-From_Beginning_to_End.mp3","a":0},{"i":132,"t":"Del Principio al Fin","f":"132-From_Beginning_to_End-Alt.mp3","a":1}]};
+const LYRICS={"de":{"1":"01-Cast_Out_of_Paradise.md","2":"02-Cast_Out_of_Paradise-Alt.md","3":"03-Cave_of_Treasures.md","4":"04-Cave_of_Treasures-Alt.md","5":"05-The_First_Darkness.md","6":"06-The_First_Darkness-Alt.md","7":"07-The_Serpents_Curse.md","8":"08-The_Serpents_Curse-Alt.md","9":"09-Satans_Disguise.md","10":"10-Satans_Disguise-Alt.md","11":"11-Forty_Days_of_Fasting.md","12":"12-Forty_Days_of_Fasting-Alt.md","13":"13-The_Word_of_God.md","14":"14-The_Word_of_God-Alt.md","15":"15-From_Dust_to_Glory.md","16":"16-From_Dust_to_Glory-Alt.md","17":"17-The_Cherub_at_the_Gate.md","18":"18-The_Cherub_at_the_Gate-Alt.md","19":"19-The_Bright_Nature.md","20":"20-The_Bright_Nature-Alt.md","21":"21-Eves_Lament.md","22":"22-Eves_Lament-Alt.md","23":"23-The_Sun_and_the_Moon.md","24":"24-The_Sun_and_the_Moon-Alt.md","25":"25-The_Fig_Leaves.md","26":"26-The_Fig_Leaves-Alt.md","27":"27-The_Promise_of_Salvation.md","28":"28-The_Promise_of_Salvation-Alt.md","29":"29-Standing_in_the_Water.md","30":"30-Standing_in_the_Water-Alt.md","31":"31-Satans_Hosts.md","32":"32-Satans_Hosts-Alt.md","33":"33-The_Fire_in_the_Cave.md","34":"34-The_Fire_in_the_Cave-Alt.md","35":"35-The_Tree_of_Life.md","36":"36-The_Tree_of_Life-Alt.md","37":"37-Angels_Among_Us.md","38":"38-Angels_Among_Us-Alt.md","39":"39-The_Garden_Remembered.md","40":"40-The_Garden_Remembered-Alt.md","41":"41-The_Jordan_Flows.md","42":"42-The_Jordan_Flows-Alt.md","43":"43-Hunger_and_Thirst.md","44":"44-Hunger_and_Thirst-Alt.md","45":"45-The_Strange_Land.md","46":"46-The_Strange_Land-Alt.md","47":"47-The_Transgression.md","48":"48-The_Transgression-Alt.md","49":"49-Cain_and_Abel.md","50":"50-Cain_and_Abel-Alt.md","51":"51-The_Covenant_Blood.md","52":"52-The_Covenant_Blood-Alt.md","53":"53-The_Weeping_Tree.md","54":"54-The_Weeping_Tree-Alt.md","55":"55-Gods_Patience.md","56":"56-Gods_Patience-Alt.md","57":"57-Adams_Prayer.md","58":"58-Adams_Prayer-Alt.md","59":"59-The_Deceivers_Lies.md","60":"60-The_Deceivers_Lies-Alt.md","61":"61-Strength_in_Weakness.md","62":"62-Strength_in_Weakness-Alt.md","63":"63-The_Sea_of_Crystal.md","64":"64-The_Sea_of_Crystal-Alt.md","65":"65-Seth_the_Replacement.md","66":"66-Seth_the_Replacement-Alt.md","67":"67-The_Enemy_Within.md","68":"68-The_Enemy_Within-Alt.md","69":"69-Morning_Comes.md","70":"70-Morning_Comes-Alt.md","71":"71-The_Garments_of_Skin.md","72":"72-The_Garments_of_Skin-Alt.md","73":"73-The_Fallen_Angels.md","74":"74-The_Fallen_Angels-Alt.md","75":"75-The_Secret_of_the_Cave.md","76":"76-The_Secret_of_the_Cave-Alt.md","77":"77-East_of_Eden.md","78":"78-East_of_Eden-Alt.md","79":"79-Adams_930_Years.md","80":"80-Adams_930_Years-Alt.md","81":"81-The_Word_Made_Flesh.md","82":"82-The_Word_Made_Flesh-Alt.md","83":"83-Paradise_Restored.md","84":"84-Paradise_Restored-Alt.md","85":"85-The_Midnight_Cry.md","86":"86-The_Midnight_Cry-Alt.md","87":"87-Born_of_Woman.md","88":"88-Born_of_Woman-Alt.md","89":"89-The_Serpent_Crusher.md","90":"90-The_Serpent_Crusher-Alt.md","91":"91-Rest_for_the_Weary.md","92":"92-Rest_for_the_Weary-Alt.md","93":"93-The_Great_Exchange.md","94":"94-The_Great_Exchange-Alt.md","95":"95-The_Valley_of_Death.md","96":"96-The_Valley_of_Death-Alt.md","97":"97-Rivers_of_Living_Water.md","98":"98-Rivers_of_Living_Water-Alt.md","99":"99-The_Day_of_Restoration.md","100":"100-The_Day_of_Restoration-Alt.md","101":"101-Fight_of_Faith.md","102":"102-Fight_of_Faith-Alt.md","103":"103-Edens_Memory.md","104":"104-Edens_Memory-Alt.md","105":"105-The_Second_Adam.md","106":"106-The_Second_Adam-Alt.md","107":"107-The_Long_Road_Home.md","108":"108-The_Long_Road_Home-Alt.md","109":"109-The_Risen_One.md","110":"110-The_Risen_One-Alt.md","111":"111-The_Final_Day.md","112":"112-The_Final_Day-Alt.md","113":"113-Gods_Faithfulness.md","114":"114-Gods_Faithfulness-Alt.md","115":"115-Walking_with_God.md","116":"116-Walking_with_God-Alt.md","117":"117-The_Burning_of_Sin.md","118":"118-The_Burning_of_Sin-Alt.md","119":"119-Children_of_Adam.md","120":"120-Children_of_Adam-Alt.md","121":"121-Never_Forgotten.md","122":"122-Never_Forgotten-Alt.md","123":"123-Holy_Holy_Holy.md","124":"124-Holy_Holy_Holy-Alt.md","125":"125-From_Glory_to_Glory.md","126":"126-From_Glory_to_Glory-Alt.md","127":"127-The_Overcoming.md","128":"128-The_Overcoming-Alt.md","129":"129-The_Eternal_Home.md","130":"130-The_Eternal_Home-Alt.md","131":"131-From_Beginning_to_End.md","132":"132-From_Beginning_to_End-Alt.md"},"en":{"1":"01-Cast_Out_of_Paradise.md","2":"02-Cast_Out_of_Paradise-Alt.md","3":"03-Cave_of_Treasures.md","4":"04-Cave_of_Treasures-Alt.md","5":"05-The_First_Darkness.md","6":"06-The_First_Darkness-Alt.md","7":"07-The_Serpents_Curse.md","8":"08-The_Serpents_Curse-Alt.md","9":"09-Satans_Disguise.md","10":"10-Satans_Disguise-Alt.md","11":"11-Forty_Days_of_Fasting.md","12":"12-Forty_Days_of_Fasting-Alt.md","13":"13-The_Word_of_God.md","14":"14-The_Word_of_God-Alt.md","15":"15-From_Dust_to_Glory.md","16":"16-From_Dust_to_Glory-Alt.md","17":"17-The_Cherub_at_the_Gate.md","18":"18-The_Cherub_at_the_Gate-Alt.md","19":"19-The_Bright_Nature.md","20":"20-The_Bright_Nature-Alt.md","21":"21-Eves_Lament.md","22":"22-Eves_Lament-Alt.md","23":"23-The_Sun_and_the_Moon.md","24":"24-The_Sun_and_the_Moon-Alt.md","25":"25-The_Fig_Leaves.md","26":"26-The_Fig_Leaves-Alt.md","27":"27-The_Promise_of_Salvation.md","28":"28-The_Promise_of_Salvation-Alt.md","29":"29-Standing_in_the_Water.md","30":"30-Standing_in_the_Water-Alt.md","31":"31-Satans_Hosts.md","32":"32-Satans_Hosts-Alt.md","33":"33-The_Fire_in_the_Cave.md","34":"34-The_Fire_in_the_Cave-Alt.md","35":"35-The_Tree_of_Life.md","36":"36-The_Tree_of_Life-Alt.md","37":"37-Angels_Among_Us.md","38":"38-Angels_Among_Us-Alt.md","39":"39-The_Garden_Remembered.md","40":"40-The_Garden_Remembered-Alt.md","41":"41-The_Jordan_Flows.md","42":"42-The_Jordan_Flows-Alt.md","43":"43-Hunger_and_Thirst.md","44":"44-Hunger_and_Thirst-Alt.md","45":"45-The_Strange_Land.md","46":"46-The_Strange_Land-Alt.md","47":"47-The_Transgression.md","48":"48-The_Transgression-Alt.md","49":"49-Cain_and_Abel.md","50":"50-Cain_and_Abel-Alt.md","51":"51-The_Covenant_Blood.md","52":"52-The_Covenant_Blood-Alt.md","53":"53-The_Weeping_Tree.md","54":"54-The_Weeping_Tree-Alt.md","55":"55-Gods_Patience.md","56":"56-Gods_Patience-Alt.md","57":"57-Adams_Prayer.md","58":"58-Adams_Prayer-Alt.md","59":"59-The_Deceivers_Lies.md","60":"60-The_Deceivers_Lies-Alt.md","61":"61-Strength_in_Weakness.md","62":"62-Strength_in_Weakness-Alt.md","63":"63-The_Sea_of_Crystal.md","64":"64-The_Sea_of_Crystal-Alt.md","65":"65-Seth_the_Replacement.md","66":"66-Seth_the_Replacement-Alt.md","67":"67-The_Enemy_Within.md","68":"68-The_Enemy_Within-Alt.md","69":"69-Morning_Comes.md","70":"70-Morning_Comes-Alt.md","71":"71-The_Garments_of_Skin.md","72":"72-The_Garments_of_Skin-Alt.md","73":"73-The_Fallen_Angels.md","74":"74-The_Fallen_Angels-Alt.md","75":"75-The_Secret_of_the_Cave.md","76":"76-The_Secret_of_the_Cave-Alt.md","77":"77-East_of_Eden.md","78":"78-East_of_Eden-Alt.md","79":"79-Adams_930_Years.md","80":"80-Adams_930_Years-Alt.md","81":"81-The_Word_Made_Flesh.md","82":"82-The_Word_Made_Flesh-Alt.md","83":"83-Paradise_Restored.md","84":"84-Paradise_Restored-Alt.md","85":"85-The_Midnight_Cry.md","86":"86-The_Midnight_Cry-Alt.md","87":"87-Born_of_Woman.md","88":"88-Born_of_Woman-Alt.md","89":"89-The_Serpent_Crusher.md","90":"90-The_Serpent_Crusher-Alt.md","91":"91-Rest_for_the_Weary.md","92":"92-Rest_for_the_Weary-Alt.md","93":"93-The_Great_Exchange.md","94":"94-The_Great_Exchange-Alt.md","95":"95-The_Valley_of_Death.md","96":"96-The_Valley_of_Death-Alt.md","97":"97-Rivers_of_Living_Water.md","98":"98-Rivers_of_Living_Water-Alt.md","99":"99-The_Day_of_Restoration.md","100":"100-The_Day_of_Restoration-Alt.md","101":"101-Fight_of_Faith.md","102":"102-Fight_of_Faith-Alt.md","103":"103-Edens_Memory.md","104":"104-Edens_Memory-Alt.md","105":"105-The_Second_Adam.md","106":"106-The_Second_Adam-Alt.md","107":"107-The_Long_Road_Home.md","108":"108-The_Long_Road_Home-Alt.md","109":"109-The_Risen_One.md","110":"110-The_Risen_One-Alt.md","111":"111-The_Final_Day.md","112":"112-The_Final_Day-Alt.md","113":"113-Gods_Faithfulness.md","114":"114-Gods_Faithfulness-Alt.md","115":"115-Walking_with_God.md","116":"116-Walking_with_God-Alt.md","117":"117-The_Burning_of_Sin.md","118":"118-The_Burning_of_Sin-Alt.md","119":"119-Children_of_Adam.md","120":"120-Children_of_Adam-Alt.md","121":"121-Never_Forgotten.md","122":"122-Never_Forgotten-Alt.md","123":"123-Holy_Holy_Holy.md","124":"124-Holy_Holy_Holy-Alt.md","125":"125-From_Glory_to_Glory.md","126":"126-From_Glory_to_Glory-Alt.md","127":"127-The_Overcoming.md","128":"128-The_Overcoming-Alt.md","129":"129-The_Eternal_Home.md","130":"130-The_Eternal_Home-Alt.md","131":"131-From_Beginning_to_End.md","132":"132-From_Beginning_to_End-Alt.md"},"es":{"1":"01-Cast_Out_of_Paradise.md","2":"02-Cast_Out_of_Paradise-Alt.md","3":"03-Cave_of_Treasures.md","4":"04-Cave_of_Treasures-Alt.md","5":"05-The_First_Darkness.md","6":"06-The_First_Darkness-Alt.md","7":"07-The_Serpents_Curse.md","8":"08-The_Serpents_Curse-Alt.md","9":"09-Satans_Disguise.md","10":"10-Satans_Disguise-Alt.md","11":"11-Forty_Days_of_Fasting.md","12":"12-Forty_Days_of_Fasting-Alt.md","13":"13-The_Word_of_God.md","14":"14-The_Word_of_God-Alt.md","15":"15-From_Dust_to_Glory.md","16":"16-From_Dust_to_Glory-Alt.md","17":"17-The_Cherub_at_the_Gate.md","18":"18-The_Cherub_at_the_Gate-Alt.md","19":"19-The_Bright_Nature.md","20":"20-The_Bright_Nature-Alt.md","21":"21-Eves_Lament.md","22":"22-Eves_Lament-Alt.md","23":"23-The_Sun_and_the_Moon.md","24":"24-The_Sun_and_the_Moon-Alt.md","25":"25-The_Fig_Leaves.md","26":"26-The_Fig_Leaves-Alt.md","27":"27-The_Promise_of_Salvation.md","28":"28-The_Promise_of_Salvation-Alt.md","29":"29-Standing_in_the_Water.md","30":"30-Standing_in_the_Water-Alt.md","31":"31-Satans_Hosts.md","32":"32-Satans_Hosts-Alt.md","33":"33-The_Fire_in_the_Cave.md","34":"34-The_Fire_in_the_Cave-Alt.md","35":"35-The_Tree_of_Life.md","36":"36-The_Tree_of_Life-Alt.md","37":"37-Angels_Among_Us.md","38":"38-Angels_Among_Us-Alt.md","39":"39-The_Garden_Remembered.md","40":"40-The_Garden_Remembered-Alt.md","41":"41-The_Jordan_Flows.md","42":"42-The_Jordan_Flows-Alt.md","43":"43-Hunger_and_Thirst.md","44":"44-Hunger_and_Thirst-Alt.md","45":"45-The_Strange_Land.md","46":"46-The_Strange_Land-Alt.md","47":"47-The_Transgression.md","48":"48-The_Transgression-Alt.md","49":"49-Cain_and_Abel.md","50":"50-Cain_and_Abel-Alt.md","51":"51-The_Covenant_Blood.md","52":"52-The_Covenant_Blood-Alt.md","53":"53-The_Weeping_Tree.md","54":"54-The_Weeping_Tree-Alt.md","55":"55-Gods_Patience.md","56":"56-Gods_Patience-Alt.md","57":"57-Adams_Prayer.md","58":"58-Adams_Prayer-Alt.md","59":"59-The_Deceivers_Lies.md","60":"60-The_Deceivers_Lies-Alt.md","61":"61-Strength_in_Weakness.md","62":"62-Strength_in_Weakness-Alt.md","63":"63-The_Sea_of_Crystal.md","64":"64-The_Sea_of_Crystal-Alt.md","65":"65-Seth_the_Replacement.md","66":"66-Seth_the_Replacement-Alt.md","67":"67-The_Enemy_Within.md","68":"68-The_Enemy_Within-Alt.md","69":"69-Morning_Comes.md","70":"70-Morning_Comes-Alt.md","71":"71-The_Garments_of_Skin.md","72":"72-The_Garments_of_Skin-Alt.md","73":"73-The_Fallen_Angels.md","74":"74-The_Fallen_Angels-Alt.md","75":"75-The_Secret_of_the_Cave.md","76":"76-The_Secret_of_the_Cave-Alt.md","77":"77-East_of_Eden.md","78":"78-East_of_Eden-Alt.md","79":"79-Adams_930_Years.md","80":"80-Adams_930_Years-Alt.md","81":"81-The_Word_Made_Flesh.md","82":"82-The_Word_Made_Flesh-Alt.md","83":"83-Paradise_Restored.md","84":"84-Paradise_Restored-Alt.md","85":"85-The_Midnight_Cry.md","86":"86-The_Midnight_Cry-Alt.md","87":"87-Born_of_Woman.md","88":"88-Born_of_Woman-Alt.md","89":"89-The_Serpent_Crusher.md","90":"90-The_Serpent_Crusher-Alt.md","91":"91-Rest_for_the_Weary.md","92":"92-Rest_for_the_Weary-Alt.md","93":"93-The_Great_Exchange.md","94":"94-The_Great_Exchange-Alt.md","95":"95-The_Valley_of_Death.md","96":"96-The_Valley_of_Death-Alt.md","97":"97-Rivers_of_Living_Water.md","98":"98-Rivers_of_Living_Water-Alt.md","99":"99-The_Day_of_Restoration.md","100":"100-The_Day_of_Restoration-Alt.md","101":"101-Fight_of_Faith.md","102":"102-Fight_of_Faith-Alt.md","103":"103-Edens_Memory.md","104":"104-Edens_Memory-Alt.md","105":"105-The_Second_Adam.md","106":"106-The_Second_Adam-Alt.md","107":"107-The_Long_Road_Home.md","108":"108-The_Long_Road_Home-Alt.md","109":"109-The_Risen_One.md","110":"110-The_Risen_One-Alt.md","111":"111-The_Final_Day.md","112":"112-The_Final_Day-Alt.md","113":"113-Gods_Faithfulness.md","114":"114-Gods_Faithfulness-Alt.md","115":"115-Walking_with_God.md","116":"116-Walking_with_God-Alt.md","117":"117-The_Burning_of_Sin.md","118":"118-The_Burning_of_Sin-Alt.md","119":"119-Children_of_Adam.md","120":"120-Children_of_Adam-Alt.md","121":"121-Never_Forgotten.md","122":"122-Never_Forgotten-Alt.md","123":"123-Holy_Holy_Holy.md","124":"124-Holy_Holy_Holy-Alt.md","125":"125-From_Glory_to_Glory.md","126":"126-From_Glory_to_Glory-Alt.md","127":"127-The_Overcoming.md","128":"128-The_Overcoming-Alt.md","129":"129-The_Eternal_Home.md","130":"130-The_Eternal_Home-Alt.md","131":"131-From_Beginning_to_End.md","132":"132-From_Beginning_to_End-Alt.md"},"ru":{"1":"01-Cast_Out_of_Paradise.md","2":"02-Cast_Out_of_Paradise-Alt.md","3":"03-Cave_of_Treasures.md","4":"04-Cave_of_Treasures-Alt.md","5":"05-The_First_Darkness.md","6":"06-The_First_Darkness-Alt.md","7":"07-The_Serpents_Curse.md","8":"08-The_Serpents_Curse-Alt.md","9":"09-Satans_Disguise.md","10":"10-Satans_Disguise-Alt.md","11":"11-Forty_Days_of_Fasting.md","12":"12-Forty_Days_of_Fasting-Alt.md","13":"13-The_Word_of_God.md","14":"14-The_Word_of_God-Alt.md","15":"15-From_Dust_to_Glory.md","16":"16-From_Dust_to_Glory-Alt.md","17":"17-The_Cherub_at_the_Gate.md","18":"18-The_Cherub_at_the_Gate-Alt.md","19":"19-The_Bright_Nature.md","20":"20-The_Bright_Nature-Alt.md","21":"21-Eves_Lament.md","22":"22-Eves_Lament-Alt.md","23":"23-The_Sun_and_the_Moon.md","24":"24-The_Sun_and_the_Moon-Alt.md","25":"25-The_Fig_Leaves.md","26":"26-The_Fig_Leaves-Alt.md","27":"27-The_Promise_of_Salvation.md","28":"28-The_Promise_of_Salvation-Alt.md","29":"29-Standing_in_the_Water.md","30":"30-Standing_in_the_Water-Alt.md","31":"31-Satans_Hosts.md","32":"32-Satans_Hosts-Alt.md","33":"33-The_Fire_in_the_Cave.md","34":"34-The_Fire_in_the_Cave-Alt.md","35":"35-The_Tree_of_Life.md","36":"36-The_Tree_of_Life-Alt.md","37":"37-Angels_Among_Us.md","38":"38-Angels_Among_Us-Alt.md","39":"39-The_Garden_Remembered.md","40":"40-The_Garden_Remembered-Alt.md","41":"41-The_Jordan_Flows.md","42":"42-The_Jordan_Flows-Alt.md","43":"43-Hunger_and_Thirst.md","44":"44-Hunger_and_Thirst-Alt.md","45":"45-The_Strange_Land.md","46":"46-The_Strange_Land-Alt.md","47":"47-The_Transgression.md","48":"48-The_Transgression-Alt.md","49":"49-Cain_and_Abel.md","50":"50-Cain_and_Abel-Alt.md","51":"51-The_Covenant_Blood.md","52":"52-The_Covenant_Blood-Alt.md","53":"53-The_Weeping_Tree.md","54":"54-The_Weeping_Tree-Alt.md","55":"55-Gods_Patience.md","56":"56-Gods_Patience-Alt.md","57":"57-Adams_Prayer.md","58":"58-Adams_Prayer-Alt.md","59":"59-The_Deceivers_Lies.md","60":"60-The_Deceivers_Lies-Alt.md","61":"61-Strength_in_Weakness.md","62":"62-Strength_in_Weakness-Alt.md","63":"63-The_Sea_of_Crystal.md","64":"64-The_Sea_of_Crystal-Alt.md","65":"65-Seth_the_Replacement.md","66":"66-Seth_the_Replacement-Alt.md","67":"67-The_Enemy_Within.md","68":"68-The_Enemy_Within-Alt.md","69":"69-Morning_Comes.md","70":"70-Morning_Comes-Alt.md","71":"71-The_Garments_of_Skin.md","72":"72-The_Garments_of_Skin-Alt.md","73":"73-The_Fallen_Angels.md","74":"74-The_Fallen_Angels-Alt.md","75":"75-The_Secret_of_the_Cave.md","76":"76-The_Secret_of_the_Cave-Alt.md","77":"77-East_of_Eden.md","78":"78-East_of_Eden-Alt.md","79":"79-Adams_930_Years.md","80":"80-Adams_930_Years-Alt.md","81":"81-The_Word_Made_Flesh.md","82":"82-The_Word_Made_Flesh-Alt.md","83":"83-Paradise_Restored.md","84":"84-Paradise_Restored-Alt.md","85":"85-The_Midnight_Cry.md","86":"86-The_Midnight_Cry-Alt.md","87":"87-Born_of_Woman.md","88":"88-Born_of_Woman-Alt.md","89":"89-The_Serpent_Crusher.md","90":"90-The_Serpent_Crusher-Alt.md","91":"91-Rest_for_the_Weary.md","92":"92-Rest_for_the_Weary-Alt.md","93":"93-The_Great_Exchange.md","94":"94-The_Great_Exchange-Alt.md","95":"95-The_Valley_of_Death.md","96":"96-The_Valley_of_Death-Alt.md","97":"97-Rivers_of_Living_Water.md","98":"98-Rivers_of_Living_Water-Alt.md","99":"99-The_Day_of_Restoration.md","100":"100-The_Day_of_Restoration-Alt.md","101":"101-Fight_of_Faith.md","102":"102-Fight_of_Faith-Alt.md","103":"103-Edens_Memory.md","104":"104-Edens_Memory-Alt.md","105":"105-The_Second_Adam.md","106":"106-The_Second_Adam-Alt.md","107":"107-The_Long_Road_Home.md","108":"108-The_Long_Road_Home-Alt.md","109":"109-The_Risen_One.md","110":"110-The_Risen_One-Alt.md","111":"111-The_Final_Day.md","112":"112-The_Final_Day-Alt.md","113":"113-Gods_Faithfulness.md","114":"114-Gods_Faithfulness-Alt.md","115":"115-Walking_with_God.md","116":"116-Walking_with_God-Alt.md","117":"117-The_Burning_of_Sin.md","118":"118-The_Burning_of_Sin-Alt.md","119":"119-Children_of_Adam.md","120":"120-Children_of_Adam-Alt.md","121":"121-Never_Forgotten.md","122":"122-Never_Forgotten-Alt.md","123":"123-Holy_Holy_Holy.md","124":"124-Holy_Holy_Holy-Alt.md","125":"125-From_Glory_to_Glory.md","126":"126-From_Glory_to_Glory-Alt.md","127":"127-The_Overcoming.md","128":"128-The_Overcoming-Alt.md","129":"129-The_Eternal_Home.md","130":"130-The_Eternal_Home-Alt.md","131":"131-From_Beginning_to_End.md","132":"132-From_Beginning_to_End-Alt.md"}};
+
+const FEATURED_ID = 105;
+const LANG_NAMES = {
+  en:'English',ar:'Arabic',bn:'Bengali',de:'German',es:'Spanish',fr:'French',
+  it:'Italian',ja:'Japanese',ko:'Korean',pt:'Portuguese',ru:'Russian',
+  zh:'Chinese',hi:'Hindi',tr:'Turkish',pl:'Polish',nl:'Dutch',sv:'Swedish',
+  da:'Danish',fi:'Finnish',no:'Norwegian',cs:'Czech',el:'Greek',he:'Hebrew',
+  hu:'Hungarian',ro:'Romanian',th:'Thai',vi:'Vietnamese',id:'Indonesian',
+  ms:'Malay',tl:'Filipino',sw:'Swahili',uk:'Ukrainian',fa:'Persian',
+  ur:'Urdu',ta:'Tamil',te:'Telugu',ml:'Malayalam',kn:'Kannada',gu:'Gujarati',
+  mr:'Marathi',pa:'Punjabi',am:'Amharic',ha:'Hausa',ig:'Igbo',yo:'Yoruba',
+  zu:'Zulu',af:'Afrikaans',sq:'Albanian',hy:'Armenian',az:'Azerbaijani',
+  eu:'Basque',be:'Belarusian',bs:'Bosnian',bg:'Bulgarian',ca:'Catalan',
+  hr:'Croatian',et:'Estonian',ka:'Georgian',lv:'Latvian',lt:'Lithuanian',
+  mk:'Macedonian',mt:'Maltese',sr:'Serbian',sk:'Slovak',sl:'Slovenian',
+  ain:'Ainu',apc:'Levantine Arabic',apd:'Sudanese Arabic',arz:'Egyptian Arabic',
+  br:'Breton',chr:'Cherokee',cy:'Welsh',fo:'Faroese',ga:'Irish',gd:'Scottish Gaelic',
+  gv:'Manx',hsb:'Upper Sorbian',jv:'Javanese',kw:'Cornish',nv:'Navajo',
+  oc:'Occitan',pcm:'Nigerian Pidgin',rom:'Romani',wuu:'Wu Chinese',
+  yag:'Yaghan',yue:'Cantonese',ngh:'Nghệ An Vietnamese',ccc:'Chamicuro'
+};
+
+const state = {
+  language: 'en',
+  tracks: [],
+  currentIndex: -1,
+  isPlaying: false,
+  shuffle: false,
+  repeat: 0, // 0=off, 1=all, 2=one
+  volume: 0.7,
+  shuffleOrder: [],
+  lyricsOpen: false
+};
+
+// Update URL parameters to reflect current track and language
+function updateUrlParams() {
+  if (state.currentIndex === -1) return;  // No track selected
+
+  const currentTrack = state.tracks[state.currentIndex];
+  const trackId = currentTrack.i;
+  const lang = state.language;
+
+  const url = new URL(window.location);
+  url.searchParams.set('t', trackId);
+  url.searchParams.set('l', lang);
+
+  // Update URL without reloading page or adding to history
+  window.history.replaceState({}, '', url);
+}
+
+const audio = document.getElementById('audioElement');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const shuffleBtn = document.getElementById('shuffleBtn');
+const repeatBtn = document.getElementById('repeatBtn');
+const muteBtn = document.getElementById('muteBtn');
+const volumeSlider = document.getElementById('volumeSlider');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
+const currentTimeEl = document.getElementById('currentTime');
+const durationEl = document.getElementById('duration');
+const trackTitleEl = document.getElementById('trackTitle');
+const featuredBadge = document.getElementById('featuredBadge');
+const trackListEl = document.getElementById('trackList');
+const langSelector = document.getElementById('languageSelector');
+const trackCountEl = document.getElementById('trackCount');
+const visualizerCanvas = document.getElementById('visualizer');
+const lyricsToggle = document.getElementById('lyricsToggle');
+const lyricsContent = document.getElementById('lyricsContent');
+const lyricsText = document.getElementById('lyricsText');
+const lyricsArrow = document.getElementById('lyricsArrow');
+
+// Audio context for visualizer
+let audioCtx, analyser, source, dataArray, bufferLength;
+let visAnimId;
+
+function initAudioContext() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    bufferLength = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLength);
+    source = audioCtx.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    console.log('Audio context initialized successfully');
+  } catch (e) {
+    console.warn('Web Audio API not available, playing without visualizer:', e);
+  }
+}
+
+function drawVisualizer() {
+  const ctx = visualizerCanvas.getContext('2d');
+  const W = visualizerCanvas.width = visualizerCanvas.offsetWidth;
+  const H = visualizerCanvas.height = visualizerCanvas.offsetHeight;
+
+  function draw() {
+    visAnimId = requestAnimationFrame(draw);
+    if (!analyser) { ctx.clearRect(0,0,W,H); return; }
+    analyser.getByteFrequencyData(dataArray);
+    ctx.clearRect(0,0,W,H);
+    const barW = (W / bufferLength) * 2.5;
+    let x = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      const v = dataArray[i] / 255;
+      const h = v * H;
+      const grad = ctx.createLinearGradient(x, H - h, x, H);
+      grad.addColorStop(0, `rgba(251,191,36,${v})`);
+      grad.addColorStop(1, `rgba(99,102,241,${v * 0.8})`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, H - h, barW - 1, h);
+      x += barW;
+    }
+  }
+  draw();
+}
+
+// Eden background
+// Comprehensive Eden Background Canvas Animation
+function initEdenCanvas() {
+  const canvas = document.getElementById('edenCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Animation state
+  const time = { value: 0 };
+
+  // Generate stars (50 total)
+  const stars = Array.from({ length: 50 }, () => ({
+    x: Math.random(),
+    y: Math.random() * 0.4,
+    size: Math.random() * 2 + 0.5,
+    opacity: Math.random() * 0.5 + 0.2,
+    phase: Math.random() * Math.PI * 2,
+    speed: Math.random() * 0.5 + 0.5,
+    golden: Math.random() < 0.2
+  }));
+
+  // Generate clouds (8 total)
+  const clouds = Array.from({ length: 8 }, () => ({
+    x: Math.random(),
+    y: Math.random() * 0.3 + 0.05,
+    width: Math.random() * 200 + 100,
+    height: Math.random() * 60 + 30,
+    opacity: Math.random() * 0.3 + 0.1,
+    speed: Math.random() * 0.00005 + 0.00002,
+    phase: Math.random() * Math.PI * 2
+  }));
+
+  // Generate cave vegetation positions once (FIX: prevents flickering)
+  const caveVegetation = Array.from({ length: 5 }, () => ({
+    x: (Math.random() - 0.5),
+    y: 0.3
+  }));
+
+  // Generate fireflies (12 total)
+  const fireflies = Array.from({ length: 12 }, () => ({
+    x: Math.random(),
+    y: Math.random() * 0.3 + 0.65,
+    phase: Math.random() * Math.PI * 2,
+    speedX: (Math.random() - 0.5) * 0.0001,
+    speedY: (Math.random() - 0.5) * 0.0001,
+    size: Math.random() * 2 + 1
+  }));
+
+  // Generate birds (5 total) - flying at different heights
+  const birds = Array.from({ length: 5 }, (_, i) => ({
+    x: Math.random(),
+    y: 0.2 + i * 0.08,
+    speed: 0.0001 + Math.random() * 0.0001,
+    phase: Math.random() * Math.PI * 2
+  }));
+
+  // Generate static mountain ranges (FIX: Generate once, not every frame)
+  function generateMountainRange(baseYPercent, variance, color, opacity) {
+    const points = [];
+    for (let x = 0; x <= 100; x += 5) {
+      points.push({
+        x: x / 100,
+        y: baseYPercent - Math.random() * variance
+      });
+    }
+    return { points, color, opacity };
+  }
+
+  const mountainRanges = [
+    generateMountainRange(0.6, 0.3, '#3d2918', 0.3),
+    generateMountainRange(0.7, 0.35, '#4a3420', 0.5),
+    generateMountainRange(0.8, 0.4, '#5c4328', 0.7)
+  ];
+
+  function drawSkyGradient() {
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#0c1220');
+    gradient.addColorStop(0.15, '#1a1f35');
+    gradient.addColorStop(0.30, '#2d3a52');
+    gradient.addColorStop(0.45, '#4a5568');
+    gradient.addColorStop(0.55, '#6b7a8f');
+    gradient.addColorStop(0.65, '#8b9eb3');
+    gradient.addColorStop(0.75, '#c4a77d');
+    gradient.addColorStop(0.82, '#d4a574');
+    gradient.addColorStop(0.88, '#e8b87a');
+    gradient.addColorStop(0.93, '#f5c882');
+    gradient.addColorStop(1, '#fcd984');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const firmament = ctx.createRadialGradient(canvas.width / 2, -canvas.height * 0.1, 0, canvas.width / 2, -canvas.height * 0.1, canvas.width * 0.8);
+    firmament.addColorStop(0, 'transparent');
+    firmament.addColorStop(0.6, 'transparent');
+    firmament.addColorStop(0.8, 'rgba(30, 41, 59, 0.2)');
+    firmament.addColorStop(1, 'rgba(15, 23, 42, 0.4)');
+    ctx.fillStyle = firmament;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function drawStars(t) {
+    stars.forEach(star => {
+      const x = star.x * canvas.width;
+      const y = star.y * canvas.height;
+      const twinkle = (Math.sin(t * star.speed + star.phase) + 1) / 2;
+      const opacity = star.opacity * (0.3 + twinkle * 0.7);
+      ctx.fillStyle = star.golden ? `rgba(251, 191, 36, ${opacity})` : `rgba(240, 249, 255, ${opacity})`;
+      ctx.shadowBlur = star.golden ? 4 : 3;
+      ctx.shadowColor = star.golden ? 'rgba(251, 191, 36, 0.4)' : 'rgba(240, 249, 255, 0.3)';
+      ctx.beginPath();
+      ctx.arc(x, y, star.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+  }
+
+  function drawSun(t) {
+    const x = canvas.width * 0.85;
+    const y = canvas.height * 0.08;
+    const radius = 48;
+    const scale = 1 + Math.sin(t * 0.0008) * 0.05;
+    const r = radius * scale;
+
+    const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
+    glowGradient.addColorStop(0, 'rgba(251, 191, 36, 0.3)');
+    glowGradient.addColorStop(0.5, 'rgba(245, 158, 11, 0.15)');
+    glowGradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = glowGradient;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(t * 0.0001);
+    for (let i = 0; i < 12; i++) {
+      const angle = (i * 30 * Math.PI) / 180;
+      const rayOpacity = 0.3 + Math.sin(t * 0.004 + i * 0.3) * 0.4;
+      const rayGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 2);
+      rayGradient.addColorStop(0, `rgba(251, 191, 36, ${rayOpacity * 0.6})`);
+      rayGradient.addColorStop(1, 'transparent');
+      ctx.strokeStyle = rayGradient;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(angle) * r * 2, Math.sin(angle) * r * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    const sunGradient = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
+    sunGradient.addColorStop(0, '#fef3c7');
+    sunGradient.addColorStop(0.5, '#fbbf24');
+    sunGradient.addColorStop(1, '#f59e0b');
+    ctx.fillStyle = sunGradient;
+    ctx.shadowBlur = 60;
+    ctx.shadowColor = 'rgba(251, 191, 36, 0.8)';
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function drawMoon(t) {
+    const x = canvas.width * 0.12;
+    const y = canvas.height * 0.12 + Math.sin(t * 0.0015) * 5;
+    const radius = 30;
+
+    const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, radius * 2);
+    glowGradient.addColorStop(0, 'rgba(226, 232, 240, 0.2)');
+    glowGradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = glowGradient;
+    ctx.beginPath();
+    ctx.arc(x, y, radius * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    const moonGradient = ctx.createRadialGradient(x - radius * 0.4, y - radius * 0.4, 0, x, y, radius);
+    moonGradient.addColorStop(0, '#f8fafc');
+    moonGradient.addColorStop(0.5, '#e2e8f0');
+    moonGradient.addColorStop(1, '#cbd5e1');
+    ctx.fillStyle = moonGradient;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'rgba(226, 232, 240, 0.5)';
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#1a1f35';
+    ctx.beginPath();
+    ctx.arc(x + radius * 0.4, y - radius * 0.15, radius * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(203, 213, 225, 0.3)';
+    ctx.beginPath();
+    ctx.arc(x - radius * 0.3, y + radius * 0.2, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - radius * 0.05, y + radius * 0.4, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawClouds(t) {
+    clouds.forEach(cloud => {
+      cloud.x += cloud.speed;
+      if (cloud.x > 1.2) cloud.x = -0.2;
+      const x = cloud.x * canvas.width;
+      const y = cloud.y * canvas.height;
+
+      // Opacity pulsing for realistic cloud movement
+      const opacityPulse = cloud.opacity * (1 + Math.sin(t * 0.001 + cloud.phase) * 0.2);
+
+      // Radial gradient for soft, realistic cloud appearance
+      const cloudGradient = ctx.createRadialGradient(
+        x, y, 0,
+        x, y, Math.max(cloud.width, cloud.height)
+      );
+      cloudGradient.addColorStop(0, `rgba(255, 255, 255, ${opacityPulse * 1.5})`);
+      cloudGradient.addColorStop(0.3, `rgba(241, 245, 249, ${opacityPulse})`);
+      cloudGradient.addColorStop(0.7, `rgba(241, 245, 249, ${opacityPulse * 0.5})`);
+      cloudGradient.addColorStop(1, 'transparent');
+
+      // Apply blur for soft edges
+      ctx.filter = 'blur(20px)';
+      ctx.fillStyle = cloudGradient;
+      ctx.fillRect(
+        x - cloud.width,
+        y - cloud.height,
+        cloud.width * 2,
+        cloud.height * 2
+      );
+      ctx.filter = 'none';
+    });
+  }
+
+  function drawMountains() {
+    mountainRanges.forEach(range => {
+      ctx.fillStyle = range.color;
+      ctx.globalAlpha = range.opacity;
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height);
+      range.points.forEach(pt => {
+        ctx.lineTo(pt.x * canvas.width, pt.y * canvas.height);
+      });
+      ctx.lineTo(canvas.width, canvas.height);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  function drawWater(t) {
+    const waterTop = canvas.height * 0.85;
+    const waveHeight = 8;
+    const waterGradient = ctx.createLinearGradient(0, waterTop, 0, canvas.height);
+    waterGradient.addColorStop(0, 'rgba(14, 165, 233, 0.4)');
+    waterGradient.addColorStop(0.5, 'rgba(14, 165, 233, 0.5)');
+    waterGradient.addColorStop(1, 'rgba(8, 145, 178, 0.6)');
+    ctx.fillStyle = waterGradient;
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height);
+    for (let x = 0; x <= canvas.width; x += 10) {
+      const y = waterTop + Math.sin((x + t * 0.1) * 0.02) * waveHeight;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.lineTo(canvas.width, canvas.height);
+    ctx.lineTo(0, canvas.height);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= canvas.width; x += 20) {
+      const shimmer = Math.sin((x + t * 0.15) * 0.03) * 3;
+      ctx.beginPath();
+      ctx.moveTo(x, waterTop + shimmer);
+      ctx.lineTo(x, waterTop + shimmer + 5);
+      ctx.stroke();
+    }
+  }
+
+  function drawFireflies(t) {
+    fireflies.forEach(fly => {
+      fly.x += fly.speedX;
+      fly.y += fly.speedY + Math.sin(t * 0.002 + fly.phase) * 0.0001;
+      if (fly.x < 0) fly.x = 1;
+      if (fly.x > 1) fly.x = 0;
+      if (fly.y < 0.65) fly.y = 0.95;
+      if (fly.y > 0.95) fly.y = 0.65;
+      const x = fly.x * canvas.width;
+      const y = fly.y * canvas.height;
+      const pulse = (Math.sin(t * 0.003 + fly.phase) + 1) / 2;
+      const opacity = 0.3 + pulse * 0.6;
+      ctx.fillStyle = `rgba(251, 191, 36, ${opacity})`;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(251, 191, 36, 0.8)';
+      ctx.beginPath();
+      ctx.arc(x, y, fly.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+  }
+
+  function drawBirds(t) {
+    birds.forEach(bird => {
+      bird.x += bird.speed;
+      if (bird.x > 1.1) bird.x = -0.1;
+      const x = bird.x * canvas.width;
+      const y = bird.y * canvas.height + Math.sin(t * 0.002 + bird.phase) * 10;
+      const wingFlap = Math.sin(t * 0.01 + bird.phase) * 5;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 8 - wingFlap, y - 3);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x + 8 + wingFlap, y - 3);
+      ctx.stroke();
+    });
+  }
+
+  function drawTree(t) {
+    const treeX = canvas.width * 0.18;
+    const treeY = canvas.height * 0.85;
+    const trunkWidth = 20;
+    const trunkHeight = 80;
+    const foliageRadius = 60;
+    const sway = Math.sin(t * 0.001) * 3;
+
+    // Trunk
+    const trunkGradient = ctx.createLinearGradient(
+      treeX - trunkWidth/2, treeY - trunkHeight,
+      treeX + trunkWidth/2, treeY
+    );
+    trunkGradient.addColorStop(0, '#6d4c41');
+    trunkGradient.addColorStop(1, '#4e342e');
+    ctx.fillStyle = trunkGradient;
+    ctx.fillRect(
+      treeX - trunkWidth/2 + sway,
+      treeY - trunkHeight,
+      trunkWidth,
+      trunkHeight
+    );
+
+    // Foliage (multiple overlapping green circles)
+    const foliageY = treeY - trunkHeight - foliageRadius * 0.5;
+    ctx.fillStyle = 'rgba(76, 175, 80, 0.8)';
+    ctx.beginPath();
+    ctx.arc(treeX + sway, foliageY, foliageRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(56, 142, 60, 0.7)';
+    ctx.beginPath();
+    ctx.arc(treeX - foliageRadius * 0.4 + sway, foliageY, foliageRadius * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(treeX + foliageRadius * 0.4 + sway, foliageY, foliageRadius * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Fruits (6 red apples)
+    const fruitPositions = [
+      { x: 0, y: -10 },
+      { x: -30, y: 5 },
+      { x: 30, y: 0 },
+      { x: -15, y: 20 },
+      { x: 20, y: 25 },
+      { x: -5, y: 35 }
+    ];
+
+    fruitPositions.forEach((pos, i) => {
+      const fruitFloat = Math.sin(t * 0.002 + i) * 2;
+      const fx = treeX + pos.x + sway;
+      const fy = foliageY + pos.y + fruitFloat;
+
+      ctx.fillStyle = '#d32f2f';
+      ctx.shadowBlur = 5;
+      ctx.shadowColor = 'rgba(211, 47, 47, 0.6)';
+      ctx.beginPath();
+      ctx.arc(fx, fy, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.beginPath();
+      ctx.arc(fx - 2, fy - 2, 2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+  }
+
+  function drawCave(t) {
+    const caveX = canvas.width * 0.82;
+    const caveY = canvas.height * 0.85;
+    const caveWidth = canvas.width * 0.15;
+    const caveHeight = canvas.height * 0.12;
+
+    // Cave opening (dark)
+    ctx.fillStyle = '#1c0f0a';
+    ctx.beginPath();
+    ctx.arc(caveX, caveY, caveWidth * 0.4, 0, Math.PI);
+    ctx.closePath();
+    ctx.fill();
+
+    // Golden glow from interior - SMOOTH PULSING (not flickering)
+    const glowPulse = 0.6 + Math.sin(t * 0.0015) * 0.15; // 0.6 → 0.9 → 0.6
+    const glowRadiusPulse = 0.6 + Math.sin(t * 0.0015) * 0.05; // 0.6 → 0.65 → 0.6
+
+    const glowGradient = ctx.createRadialGradient(
+      caveX, caveY, 0,
+      caveX, caveY, caveWidth * glowRadiusPulse
+    );
+    glowGradient.addColorStop(0, `rgba(251, 191, 36, ${glowPulse})`);
+    glowGradient.addColorStop(0.5, `rgba(245, 158, 11, ${glowPulse * 0.5})`);
+    glowGradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = glowGradient;
+    ctx.fillRect(caveX - caveWidth/2, caveY - caveHeight/2, caveWidth, caveHeight);
+
+    // Rock formations (brown)
+    ctx.fillStyle = '#4a3420';
+    ctx.beginPath();
+    ctx.arc(caveX - caveWidth * 0.3, caveY, caveWidth * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(caveX + caveWidth * 0.3, caveY, caveWidth * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Vegetation/moss (green) - STATIC positions (no flickering)
+    ctx.fillStyle = 'rgba(101, 163, 13, 0.6)';
+    caveVegetation.forEach(veg => {
+      const vx = caveX + veg.x * caveWidth;
+      const vy = caveY + caveHeight * veg.y;
+      ctx.beginPath();
+      ctx.arc(vx, vy, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function drawPersonSilhouette(x, y, height, color) {
+    ctx.fillStyle = color;
+
+    // Head - use ellipse for more natural shape
+    const headWidth = height * 0.15;
+    const headHeight = height * 0.18;
+    ctx.beginPath();
+    ctx.ellipse(x, y - height * 0.85, headWidth, headHeight, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body - use curved path for realistic shape
+    ctx.beginPath();
+    ctx.moveTo(x - height * 0.15, y - height * 0.7);
+    // Shoulders
+    ctx.quadraticCurveTo(x - height * 0.18, y - height * 0.6, x - height * 0.2, y - height * 0.5);
+    // Left side of body
+    ctx.quadraticCurveTo(x - height * 0.22, y - height * 0.3, x - height * 0.2, y);
+    // Bottom
+    ctx.lineTo(x + height * 0.2, y);
+    // Right side of body
+    ctx.quadraticCurveTo(x + height * 0.22, y - height * 0.3, x + height * 0.2, y - height * 0.5);
+    // Right shoulder
+    ctx.quadraticCurveTo(x + height * 0.18, y - height * 0.6, x + height * 0.15, y - height * 0.7);
+    ctx.closePath();
+    ctx.fill();
+
+    // Arms - visible arm curves
+    ctx.strokeStyle = color;
+    ctx.lineWidth = height * 0.06;
+    ctx.lineCap = 'round';
+
+    // Left arm
+    ctx.beginPath();
+    ctx.moveTo(x - height * 0.15, y - height * 0.65);
+    ctx.quadraticCurveTo(x - height * 0.25, y - height * 0.5, x - height * 0.22, y - height * 0.3);
+    ctx.stroke();
+
+    // Right arm
+    ctx.beginPath();
+    ctx.moveTo(x + height * 0.15, y - height * 0.65);
+    ctx.quadraticCurveTo(x + height * 0.25, y - height * 0.5, x + height * 0.22, y - height * 0.3);
+    ctx.stroke();
+  }
+
+  function drawSheepSilhouette(x, y, size, t) {
+    // Staggered horizontal movement
+    const xOffset = Math.sin(t * 0.002) * 2;
+    const actualX = x + xOffset;
+
+    // Fluffy body - tan wool color
+    ctx.fillStyle = 'rgba(214, 211, 209, 0.7)'; // #d6d3d1
+    ctx.beginPath();
+    ctx.ellipse(actualX, y, size, size * 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Head - gray-tan color
+    ctx.fillStyle = 'rgba(168, 162, 158, 0.7)'; // #a8a29e
+    ctx.beginPath();
+    ctx.arc(actualX + size * 0.7, y - size * 0.3, size * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Legs - brown
+    ctx.strokeStyle = 'rgba(120, 113, 108, 0.7)'; // #78716c
+    ctx.lineWidth = 1;
+
+    // Front leg
+    ctx.beginPath();
+    ctx.moveTo(actualX - size * 0.4, y + size * 0.5);
+    ctx.lineTo(actualX - size * 0.4, y + size * 0.9);
+    ctx.stroke();
+
+    // Back leg
+    ctx.beginPath();
+    ctx.moveTo(actualX + size * 0.4, y + size * 0.5);
+    ctx.lineTo(actualX + size * 0.4, y + size * 0.9);
+    ctx.stroke();
+  }
+
+  function drawCharacters(t) {
+    const groundY = canvas.height * 0.92;
+
+    // Adam & Eve with bobbing animation
+    const bobAdam = Math.sin(t * 0.0015) * 2;
+    const bobEve = Math.sin(t * 0.0015 + 0.5) * 1.5;
+
+    ctx.globalAlpha = 0.7;
+    drawPersonSilhouette(canvas.width * 0.82, groundY + bobAdam, 25, '#1c1917');
+    drawPersonSilhouette(canvas.width * 0.79, groundY + bobEve, 22, '#1c1917');
+
+    // Cain with sheep - vertical bob
+    const bobCain = Math.sin(t * 0.002) * 1.5;
+    ctx.globalAlpha = 0.6;
+    drawPersonSilhouette(canvas.width * 0.22, groundY + bobCain, 24, '#1c1917');
+
+    // Sheep near Cain with animation
+    const sheepBob1 = Math.sin(t * 0.003) * 1;
+    const sheepBob2 = Math.sin(t * 0.0025) * 1;
+    drawSheepSilhouette(canvas.width * 0.25, groundY + 5 + sheepBob1, 15, t);
+    drawSheepSilhouette(canvas.width * 0.20, groundY + 3 + sheepBob2, 13, t);
+
+    // Abel with plants
+    const bobAbel = Math.sin(t * 0.0025) * 1;
+    drawPersonSilhouette(canvas.width * 0.38, groundY + bobAbel, 23, '#1c1917');
+
+    // Sisters with subtle bob
+    const bobSister1 = Math.sin(t * 0.0018) * 1.5;
+    const bobSister2 = Math.sin(t * 0.0018 + 0.3) * 1.5;
+    ctx.globalAlpha = 0.55;
+    drawPersonSilhouette(canvas.width * 0.65, groundY + bobSister1, 20, '#1c1917');
+    ctx.globalAlpha = 0.50;
+    drawPersonSilhouette(canvas.width * 0.68, groundY + bobSister2, 21, '#1c1917');
+
+    ctx.globalAlpha = 1;
+  }
+
+  function animate() {
+    time.value++;
+    const t = time.value;
+
+    // Layer order (bottom to top)
+    drawSkyGradient();
+    drawStars(t);
+    drawSun(t);
+    drawMoon(t);
+    drawClouds(t);
+    drawBirds(t);
+    drawMountains();
+    drawWater(t);
+    drawTree(t);
+    drawCave(t);
+    drawCharacters(t);
+    drawFireflies(t);
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+}
+
+// Initialize
+function init() {
+  loadLanguageSelector();
+  switchLanguage(state.language);
+  audio.volume = state.volume;
+  volumeSlider.value = state.volume * 100;
+  drawVisualizer();
+  initEdenCanvas();
+
+  // Audio debug listeners
+  audio.addEventListener('error', (e) => {
+    console.error('Audio error:', audio.error);
+  });
+  audio.addEventListener('loadeddata', () => {
+    console.log('Audio loaded successfully');
+  });
+  audio.addEventListener('canplay', () => {
+    console.log('Audio can play');
+  });
+
+  // Restore saved state
+  const saved = localStorage.getItem('confliction_state');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      if (s.volume !== undefined) { state.volume = s.volume; audio.volume = s.volume; volumeSlider.value = s.volume * 100; }
+      if (s.language && TRACKS[s.language]) { state.language = s.language; langSelector.value = s.language; switchLanguage(s.language); }
+      if (s.shuffle) { state.shuffle = true; shuffleBtn.classList.add('active'); }
+      if (s.repeat) { state.repeat = s.repeat; updateRepeatBtn(); }
+    } catch(e) {}
+  }
+
+  // Parse URL parameters (overrides saved state)
+  const params = new URLSearchParams(window.location.search);
+  const langParam = params.get('l');
+  const trackParam = params.get('t');
+
+  // Override language if URL parameter provided
+  if (langParam && TRACKS[langParam]) {
+    state.language = langParam;
+    langSelector.value = langParam;
+    switchLanguage(langParam);
+  }
+
+  // Load and play track if URL parameter provided
+  if (trackParam) {
+    const trackId = parseInt(trackParam, 10);
+    if (!isNaN(trackId)) {
+      // Find array index for this track ID
+      const arrayIndex = state.tracks.findIndex(t => t.i === trackId);
+      if (arrayIndex !== -1) {
+        playTrack(arrayIndex);
+      } else {
+        console.warn(`Track ${trackId} not found in language ${state.language}`);
+      }
+    }
+  }
+}
+
+function saveState() {
+  localStorage.setItem('confliction_state', JSON.stringify({
+    volume: state.volume,
+    language: state.language,
+    shuffle: state.shuffle,
+    repeat: state.repeat
+  }));
+}
+
+function loadLanguageSelector() {
+  langSelector.innerHTML = '';
+  const langs = Object.keys(TRACKS).sort((a, b) => {
+    if (a === 'en') return -1;
+    if (b === 'en') return 1;
+    return (LANG_NAMES[a] || a).localeCompare(LANG_NAMES[b] || b);
+  });
+  for (const lang of langs) {
+    const opt = document.createElement('option');
+    opt.value = lang;
+    const name = LANG_NAMES[lang] || lang.toUpperCase();
+    const count = TRACKS[lang].length;
+    opt.textContent = `${name} (${count} tracks)`;
+    langSelector.appendChild(opt);
+  }
+  langSelector.value = state.language;
+}
+
+function switchLanguage(lang) {
+  state.language = lang;
+  state.tracks = TRACKS[lang] || TRACKS['en'];
+  state.currentIndex = -1;
+  if (state.shuffle) generateShuffleOrder();
+  renderTrackList();
+  trackCountEl.textContent = `${state.tracks.length} tracks`;
+  saveState();
+}
+
+function generateShuffleOrder() {
+  state.shuffleOrder = [...Array(state.tracks.length).keys()];
+  for (let i = state.shuffleOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [state.shuffleOrder[i], state.shuffleOrder[j]] = [state.shuffleOrder[j], state.shuffleOrder[i]];
+  }
+}
+
+function renderTrackList() {
+  trackListEl.innerHTML = '';
+  state.tracks.forEach((track, idx) => {
+    const div = document.createElement('div');
+    div.className = 'track-item' + (track.a ? ' is-alt' : '') + (idx === state.currentIndex ? ' playing' : '');
+    const numStr = String(track.i).padStart(3, '0');
+    div.innerHTML = `
+      <span class="track-number">${numStr}</span>
+      <span class="track-title">${escHtml(track.t)}</span>
+      ${track.a ? '<span class="track-alt-label">ALT</span>' : ''}
+      ${track.i === FEATURED_ID && !track.a ? '<span class="track-alt-label" style="background:rgba(251,191,36,0.15);color:#fbbf24;">★</span>' : ''}
+      <button class="play-btn-small">${idx === state.currentIndex && state.isPlaying ? '⏸' : '▶'}</button>
+    `;
+    div.addEventListener('click', () => playTrack(idx));
+    trackListEl.appendChild(div);
+  });
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function playTrack(idx) {
+  if (idx < 0 || idx >= state.tracks.length) return;
+  state.currentIndex = idx;
+  const track = state.tracks[idx];
+  const lang = state.language;
+
+  audio.src = `tracks/${lang}/${track.f}`;
+  audio.load();
+
+  initAudioContext();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+  audio.play().then(() => {
+    state.isPlaying = true;
+    updatePlayButton();
+    renderTrackList();
+    console.log('Playing:', track.t, '- Volume:', audio.volume);
+  }).catch((err) => {
+    console.error('Play failed:', err);
+    alert('Failed to play audio. Error: ' + err.message);
+  });
+
+  trackTitleEl.textContent = track.t;
+  if (track.i === FEATURED_ID && !track.a) {
+    featuredBadge.style.display = 'inline-block';
+    featuredBadge.textContent = 'Featured Track';
+    featuredBadge.className = 'featured-badge';
+  } else if (track.a) {
+    featuredBadge.style.display = 'inline-block';
+    featuredBadge.textContent = 'Alt Version';
+    featuredBadge.className = 'alt-badge';
+  } else {
+    featuredBadge.style.display = 'none';
+  }
+
+  loadLyrics(track, lang);
+  // Auto-open lyrics when a track starts
+  if (!state.lyricsOpen) {
+    state.lyricsOpen = true;
+    lyricsContent.classList.remove('hidden');
+    lyricsToggle.classList.add('open');
+    lyricsArrow.innerHTML = '&#9650;';
+  }
+  document.title = `${track.t} - Confliction`;
+
+  updateUrlParams();  // Update URL with current track and language
+}
+
+function updatePlayButton() {
+  playPauseBtn.innerHTML = state.isPlaying ? '⏸' : '▶';
+}
+
+function togglePlay() {
+  if (state.currentIndex < 0) {
+    playTrack(0);
+    return;
+  }
+  if (state.isPlaying) {
+    audio.pause();
+    state.isPlaying = false;
+  } else {
+    initAudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    audio.play().catch(() => {});
+    state.isPlaying = true;
+  }
+  updatePlayButton();
+  renderTrackList();
+}
+
+function playNext() {
+  if (state.tracks.length === 0) return;
+  let next;
+  if (state.shuffle) {
+    const si = state.shuffleOrder.indexOf(state.currentIndex);
+    next = state.shuffleOrder[(si + 1) % state.shuffleOrder.length];
+  } else {
+    next = (state.currentIndex + 1) % state.tracks.length;
+  }
+  playTrack(next);
+}
+
+function playPrev() {
+  if (state.tracks.length === 0) return;
+  if (audio.currentTime > 3) {
+    audio.currentTime = 0;
+    return;
+  }
+  let prev;
+  if (state.shuffle) {
+    const si = state.shuffleOrder.indexOf(state.currentIndex);
+    prev = state.shuffleOrder[(si - 1 + state.shuffleOrder.length) % state.shuffleOrder.length];
+  } else {
+    prev = (state.currentIndex - 1 + state.tracks.length) % state.tracks.length;
+  }
+  playTrack(prev);
+}
+
+function toggleShuffle() {
+  state.shuffle = !state.shuffle;
+  shuffleBtn.classList.toggle('active');
+  if (state.shuffle) generateShuffleOrder();
+  saveState();
+}
+
+function toggleRepeat() {
+  state.repeat = (state.repeat + 1) % 3;
+  updateRepeatBtn();
+  saveState();
+}
+
+function updateRepeatBtn() {
+  repeatBtn.classList.toggle('active', state.repeat > 0);
+  repeatBtn.innerHTML = state.repeat === 2 ? '🔂' : '🔁';
+}
+
+// Lyrics
+async function loadLyrics(track, lang) {
+  lyricsText.className = 'lyrics-text lyrics-loading';
+  lyricsText.textContent = 'Loading lyrics...';
+
+  const trackId = String(track.i);
+
+  // Try current language first, then fallback to English
+  const langsToTry = [lang];
+  if (lang !== 'en') langsToTry.push('en');
+
+  for (const tryLang of langsToTry) {
+    const lyricsMap = LYRICS[tryLang];
+    if (!lyricsMap || !lyricsMap[trackId]) continue;
+
+    const filename = lyricsMap[trackId];
+    try {
+      const resp = await fetch(`lyrics/${tryLang}/${filename}`);
+      if (!resp.ok) continue;
+      const text = await resp.text();
+      renderLyrics(text, tryLang !== lang ? tryLang : null);
+      return;
+    } catch(e) { continue; }
+  }
+
+  lyricsText.className = 'lyrics-text lyrics-unavailable';
+  lyricsText.textContent = 'Lyrics not available for this track';
+}
+
+function renderLyrics(markdown, fallbackLang) {
+  lyricsText.className = 'lyrics-text';
+  let html = '';
+
+  if (fallbackLang) {
+    html += `<div style="color:rgba(224,231,255,0.4);font-size:0.8rem;margin-bottom:12px;">Showing lyrics in ${LANG_NAMES[fallbackLang] || fallbackLang}</div>`;
+  }
+
+  const lines = markdown.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) { html += '<br>'; continue; }
+
+    // Song title line (e.g., SONG 1: "Clean Release")
+    if (/^SONG\s+\d+/i.test(trimmed)) {
+      html += `<div class="song-title">${escHtml(trimmed)}</div>`;
+    }
+    // Theme line
+    else if (/^\(Theme:/i.test(trimmed)) {
+      html += `<div class="theme-line">${escHtml(trimmed)}</div>`;
+    }
+    // Section headers like [Verse 1], [Chorus], [Bridge], [Outro], [Intro]
+    else if (/^\[.+\]$/.test(trimmed)) {
+      html += `<div class="section-header">${escHtml(trimmed)}</div>`;
+    }
+    // Normal lyric line
+    else {
+      html += `<div>${escHtml(trimmed)}</div>`;
+    }
+  }
+
+  lyricsText.innerHTML = html;
+}
+
+function toggleLyrics() {
+  state.lyricsOpen = !state.lyricsOpen;
+  lyricsContent.classList.toggle('hidden', !state.lyricsOpen);
+  lyricsToggle.classList.toggle('open', state.lyricsOpen);
+  lyricsArrow.innerHTML = state.lyricsOpen ? '&#9650;' : '&#9660;';
+}
+
+// Progress & time
+function formatTime(s) {
+  if (isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+audio.addEventListener('timeupdate', () => {
+  if (audio.duration) {
+    const pct = (audio.currentTime / audio.duration) * 100;
+    progressFill.style.width = pct + '%';
+    currentTimeEl.textContent = formatTime(audio.currentTime);
+    durationEl.textContent = formatTime(audio.duration);
+  }
+});
+
+audio.addEventListener('ended', () => {
+  if (state.repeat === 2) {
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  } else if (state.repeat === 1 || state.currentIndex < state.tracks.length - 1 || state.shuffle) {
+    playNext();
+  } else {
+    state.isPlaying = false;
+    updatePlayButton();
+    renderTrackList();
+  }
+});
+
+progressBar.addEventListener('click', (e) => {
+  if (audio.duration) {
+    const rect = progressBar.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = pct * audio.duration;
+  }
+});
+
+// Volume
+volumeSlider.addEventListener('input', (e) => {
+  state.volume = e.target.value / 100;
+  audio.volume = state.volume;
+  updateMuteIcon();
+  saveState();
+});
+
+function updateMuteIcon() {
+  if (audio.volume === 0 || audio.muted) {
+    muteBtn.innerHTML = '🔇';
+  } else if (audio.volume < 0.5) {
+    muteBtn.innerHTML = '🔉';
+  } else {
+    muteBtn.innerHTML = '🔊';
+  }
+}
+
+muteBtn.addEventListener('click', () => {
+  audio.muted = !audio.muted;
+  updateMuteIcon();
+});
+
+// Event listeners
+playPauseBtn.addEventListener('click', togglePlay);
+nextBtn.addEventListener('click', playNext);
+prevBtn.addEventListener('click', playPrev);
+shuffleBtn.addEventListener('click', toggleShuffle);
+repeatBtn.addEventListener('click', toggleRepeat);
+lyricsToggle.addEventListener('click', toggleLyrics);
+langSelector.addEventListener('change', (e) => {
+  switchLanguage(e.target.value);
+});
+
+// Share button helper functions
+function getShareUrl() {
+  if (state.currentIndex === -1) return window.location.href;
+
+  const currentTrack = state.tracks[state.currentIndex];
+  const trackId = currentTrack.i;
+  const lang = state.language;
+
+  const url = new URL(window.location);
+  url.searchParams.set('t', trackId);
+  url.searchParams.set('l', lang);
+
+  return url.toString();
+}
+
+function getShareText() {
+  if (state.currentIndex === -1) return 'Check out Confliction - The Cave of Treasures';
+
+  const currentTrack = state.tracks[state.currentIndex];
+  const trackTitle = currentTrack.t;
+
+  return `🎵 Now playing: "${trackTitle}" from Confliction - The Cave of Treasures`;
+}
+
+// Twitter share
+document.getElementById('shareTwitter').addEventListener('click', () => {
+  const url = getShareUrl();
+  const text = getShareText();
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  window.open(twitterUrl, '_blank', 'width=550,height=420');
+});
+
+// Facebook share
+document.getElementById('shareFacebook').addEventListener('click', () => {
+  const url = getShareUrl();
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  window.open(facebookUrl, '_blank', 'width=550,height=420');
+});
+
+// WhatsApp share
+document.getElementById('shareWhatsApp').addEventListener('click', () => {
+  const url = getShareUrl();
+  const text = getShareText();
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+  window.open(whatsappUrl, '_blank');
+});
+
+// LinkedIn share
+document.getElementById('shareLinkedIn').addEventListener('click', () => {
+  const url = getShareUrl();
+  const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+  window.open(linkedInUrl, '_blank', 'width=550,height=420');
+});
+
+// Copy link
+document.getElementById('shareCopy').addEventListener('click', () => {
+  const url = getShareUrl();
+  navigator.clipboard.writeText(url).then(() => {
+    // Show feedback
+    const btn = document.getElementById('shareCopy');
+    const originalTitle = btn.title;
+    btn.title = 'Copied!';
+    btn.style.background = 'rgba(34, 197, 94, 0.3)';
+
+    setTimeout(() => {
+      btn.title = originalTitle;
+      btn.style.background = '';
+    }, 2000);
+  }).catch(err => {
+    console.error('Failed to copy:', err);
+    alert('Could not copy link. Please copy manually from the address bar.');
+  });
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  switch(e.code) {
+    case 'Space': e.preventDefault(); togglePlay(); break;
+    case 'ArrowRight': e.preventDefault(); playNext(); break;
+    case 'ArrowLeft': e.preventDefault(); playPrev(); break;
+    case 'ArrowUp': e.preventDefault();
+      state.volume = Math.min(1, state.volume + 0.05);
+      audio.volume = state.volume;
+      volumeSlider.value = state.volume * 100;
+      updateMuteIcon(); break;
+    case 'ArrowDown': e.preventDefault();
+      state.volume = Math.max(0, state.volume - 0.05);
+      audio.volume = state.volume;
+      volumeSlider.value = state.volume * 100;
+      updateMuteIcon(); break;
+    case 'KeyS': toggleShuffle(); break;
+    case 'KeyR': toggleRepeat(); break;
+    case 'KeyL': toggleLyrics(); break;
+    case 'KeyM': audio.muted = !audio.muted; updateMuteIcon(); break;
+  }
+});
+
+// Media session
+if ('mediaSession' in navigator) {
+  audio.addEventListener('play', () => {
+    if (state.currentIndex >= 0) {
+      const track = state.tracks[state.currentIndex];
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.t,
+        artist: 'Confliction',
+        album: 'The Cave of Treasures'
+      });
+    }
+  });
+  navigator.mediaSession.setActionHandler('play', togglePlay);
+  navigator.mediaSession.setActionHandler('pause', togglePlay);
+  navigator.mediaSession.setActionHandler('nexttrack', playNext);
+  navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+}
+
+init();
+
+</script>
+</body>
+</html>
