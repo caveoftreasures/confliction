@@ -821,7 +821,7 @@ async function releaseWakeLock() {
 // Service Worker registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/confliction/sw.js')
+    navigator.serviceWorker.register('/sw.js')
       .then(reg => console.log('✅ Service Worker registered'))
       .catch(err => console.error('❌ SW registration failed:', err));
   });
@@ -863,7 +863,7 @@ function preCacheNextTrack() {
     const nextTrack = state.tracks[nextIndex];
     navigator.serviceWorker.controller.postMessage({
       action: 'preCacheTrack',
-      url: `/confliction/tracks/${state.language}/${nextTrack.f}`
+      url: `/tracks/${state.language}/${nextTrack.f}`
     });
   }
 }
