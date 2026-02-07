@@ -750,22 +750,25 @@ function loadGoogleAnalytics() {
   console.log('Google Analytics loaded');
 }
 
-// Accept button handler
-document.getElementById('acceptCookies')?.addEventListener('click', () => {
-  localStorage.setItem(CONSENT_KEY, 'accepted');
-  document.getElementById('cookieConsent').style.display = 'none';
-  loadGoogleAnalytics();
-});
+// Initialize consent after DOM loads
+document.addEventListener('DOMContentLoaded', () => {
+  // Accept button handler
+  document.getElementById('acceptCookies')?.addEventListener('click', () => {
+    localStorage.setItem(CONSENT_KEY, 'accepted');
+    document.getElementById('cookieConsent').style.display = 'none';
+    loadGoogleAnalytics();
+  });
 
-// Decline button handler
-document.getElementById('declineCookies')?.addEventListener('click', () => {
-  localStorage.setItem(CONSENT_KEY, 'declined');
-  document.getElementById('cookieConsent').style.display = 'none';
-  console.log('Analytics declined');
-});
+  // Decline button handler
+  document.getElementById('declineCookies')?.addEventListener('click', () => {
+    localStorage.setItem(CONSENT_KEY, 'declined');
+    document.getElementById('cookieConsent').style.display = 'none';
+    console.log('Analytics declined');
+  });
 
-// Check consent on page load
-checkConsent();
+  // Check consent on page load
+  checkConsent();
+});
 
 // Update URL parameters to reflect current track and language
 function updateUrlParams() {
