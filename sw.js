@@ -6,10 +6,10 @@ const CACHE_NAMES = {
 };
 
 const APP_SHELL = [
-  '/confliction/',
-  '/confliction/index.html',
-  '/confliction/manifest.json',
-  '/confliction/favicon.ico'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.ico'
 ];
 
 // Install: cache app shell
